@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_maps_drawing_tools/google_maps_drawing_tools.dart'; // Your package
 
 class MapDrawingScreen extends StatefulWidget {
-  const MapDrawingScreen({Key? key}) : super(key: key);
+  const MapDrawingScreen({super.key});
 
   @override
   State<MapDrawingScreen> createState() => _MapDrawingScreenState();

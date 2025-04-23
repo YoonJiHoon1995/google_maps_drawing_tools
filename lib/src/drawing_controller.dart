@@ -112,7 +112,7 @@ class DrawingController extends ChangeNotifier {
       if (index == -1) return;
 
       final oldCircle = _drawableCircles[index];
-      final updatedCircle = oldCircle.copyWith(strokeColor: newColor, fillColor: newColor.withOpacity(0.2));
+      final updatedCircle = oldCircle.copyWith(strokeColor: newColor, fillColor: newColor.withValues(alpha: 0.2));
 
       _drawableCircles[index] = updatedCircle;
 
@@ -371,7 +371,7 @@ class DrawingController extends ChangeNotifier {
       return Polygon(
         polygonId: PolygonId(polygon.id),
         points: polygon.points,
-        fillColor: polygon.fillColor.withOpacity(0.3),
+        fillColor: polygon.fillColor.withValues(alpha: 0.2),
         strokeColor: polygon.strokeColor,
         strokeWidth: polygon.strokeWidth,
         consumeTapEvents: true,
@@ -492,7 +492,6 @@ class DrawingController extends ChangeNotifier {
     onCircleUpdated?.call(updated);
   }
 
-  double _degreesToRadians(double deg) => deg * (pi / 180);
 
   /// Place handle due east of center at current radius
   LatLng computeRadiusHandle(LatLng center, double radiusMeters) {
