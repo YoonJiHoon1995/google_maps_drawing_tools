@@ -1,3 +1,5 @@
+// ignore_for_file: unused_import
+
 import 'package:example/src/map_drawing_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_drawing_tools/google_maps_drawing_tools.dart';

@@ -165,8 +165,25 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
               widget.controller.finishPolygon();
             }
           },
+          infoWindow: InfoWindow(
+            title: isFirst && isDrawing && hasEnoughPoints ? "Tap to Finish Drawing ✅" : "Long press and drag to update point",
+            onTap: () {
+              if (isFirst && isDrawing && hasEnoughPoints) {
+                widget.controller.finishPolygon();
+              }
+            },
+          )
         ),
       );
+    }
+
+    if(editingMarkers.length > 2) {
+      Future.delayed(Duration(milliseconds: 4000), () {
+        widget.controller.googleMapController?.showMarkerInfoWindow(editingMarkers.first.markerId);
+        Future.delayed(Duration(milliseconds: 4000), () {
+          widget.controller.googleMapController?.hideMarkerInfoWindow(editingMarkers.first.markerId);
+        },);
+      },);
     }
 
     // Midpoint markers — show ONLY if polygon is selected AND drawing is finished
@@ -190,6 +207,7 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
               widget.controller.insertMidpointAsVertex(selected.id, i + 1, newPosition);
             },
             icon: widget.controller.midpointPolygonMarkerIcon,
+            infoWindow: InfoWindow(title: 'Long press and drag to add new point'),
           ),
         );
       }
@@ -232,7 +250,12 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
         return GoogleMap(
           key: widget.key,
           initialCameraPosition: widget.initialCameraPosition,
-          onMapCreated: widget.onMapCreated,
+          onMapCreated: (controller) {
+            widget.controller.googleMapController = controller;
+            if(widget.onMapCreated != null) {
+              widget.onMapCreated!(controller);
+            }
+          },
           polygons: {...?widget.polygons, ...widget.controller.mapPolygons},
           polylines: {...?widget.polylines, ...widget.controller.mapPolylines},
           markers: {...?widget.markers, ..._buildEditingMarkers()},

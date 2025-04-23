@@ -31,6 +31,7 @@ class DrawingController extends ChangeNotifier {
   DrawablePolyline? _activePolyline;
   DrawablePolygon? _activePolygon;
   DrawablePolygon? _selectedPolygon;
+  GoogleMapController? googleMapController;
 
   /// Callback for when a polygon is drawn
   void Function(List<DrawablePolygon> allPolygons)? onPolygonDrawn;
@@ -289,39 +290,40 @@ class DrawingController extends ChangeNotifier {
 
 
   void updateMidpointPosition(String polygonId, int index, LatLng newPosition) {
-    final polygonIndex = _polygons.indexWhere((p) => p.id == polygonId);
-    if (polygonIndex == -1) return;
+    final polygon = _selectedPolygon;
+    if (polygon == null) return;
 
-    final polygon = _polygons[polygonIndex];
-    final points = [...polygon.points];
+    final points = List<LatLng>.from(polygon.points);
+    final prevIndex = (index == 0) ? points.length - 1 : index - 1;
+    final nextIndex = (index == points.length - 1) ? 0 : index + 1;
 
-    // Insert the new midpoint between the two points at the given index and index + 1
-    // If the polygon is closed, index + 1 wraps around
-    final isClosed = points.first == points.last;
-    final nextIndex = (index + 1) % points.length;
+    // Current midpoint between prev and next
+    final currentMidpoint = LatLng(
+      (points[prevIndex].latitude + points[nextIndex].latitude) / 2,
+      (points[prevIndex].longitude + points[nextIndex].longitude) / 2,
+    );
 
-    // Only allow insertion if valid index
-    if (index < 0 || nextIndex >= points.length) return;
+    // Calculate delta from current midpoint to new position
+    final latDelta = newPosition.latitude - currentMidpoint.latitude;
+    final lngDelta = newPosition.longitude - currentMidpoint.longitude;
 
-    points.insert(nextIndex, newPosition);
+    // Move both prev and next points slightly toward the new midpoint
+    final newPrevPoint = LatLng(
+      points[prevIndex].latitude + latDelta / 2,
+      points[prevIndex].longitude + lngDelta / 2,
+    );
 
-    // Update the polygon with the new point inserted
-    final updatedPolygon = polygon.copyWith(points: points);
-    _polygons[polygonIndex] = updatedPolygon;
+    final newNextPoint = LatLng(
+      points[nextIndex].latitude + latDelta / 2,
+      points[nextIndex].longitude + lngDelta / 2,
+    );
 
-    // Update polyline if exists
-    final polylineIndex = _polylines.indexWhere((p) => p.id == polygonId);
-    if (polylineIndex != -1) {
-      _polylines[polylineIndex] = _polylines[polylineIndex].copyWith(points: points);
-    }
+    points[prevIndex] = newPrevPoint;
+    points[nextIndex] = newNextPoint;
 
-    if (_selectedPolygon?.id == polygonId) {
-      _selectedPolygon = updatedPolygon;
-    }
-
-    notifyListeners();
-    onPolygonUpdated?.call(updatedPolygon);
+    _updatePolygon(polygonId, points);
   }
+
 
 
   void insertMidpointAsVertex(String polygonId, int insertIndex, LatLng newPoint) {
