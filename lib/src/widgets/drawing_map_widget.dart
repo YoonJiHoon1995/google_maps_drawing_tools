@@ -114,8 +114,11 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
   void _onMapTap(LatLng position) {
     if (widget.controller.currentMode == DrawMode.polygon) {
       widget.controller.addPolygonPoint(position);
+    } else if (widget.controller.currentMode == DrawMode.circle) {
+      widget.controller.addCircle(position, widget.controller.currentZoom);
     } else {
       widget.controller.deselectPolygon();
+      widget.controller.deselectCircle(); // <- Add this
     }
   }
 
@@ -133,7 +136,7 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
         widget.controller.isNearPoint(
           points.first,
           points.last,
-          widget.controller.updatedZoom,
+          widget.controller.currentZoom,
         );
 
     final uniquePoints = isClosed ? points.sublist(0, points.length - 1) : points;
@@ -241,6 +244,47 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
   }
 
 
+  Set<Marker> _buildCircleEditingMarkers() {
+    final circle = widget.controller.selectedCircle;
+    if (circle == null || widget.controller.currentMode != DrawMode.circle) return {};
+
+    final center = circle.center;
+    final handle = widget.controller.computeRadiusHandle(center, circle.radius);
+
+    Set<Marker> markers = {
+      // Center marker
+      Marker(
+        markerId: MarkerId('${circle.id}_center'),
+        position: center,
+        draggable: true,
+        icon: widget.controller.circleCenterMarkerIcon,
+        onDragEnd: (newPosition) {
+          widget.controller.updateCircleCenter(circle.id, newPosition);
+        },
+        infoWindow: InfoWindow(
+          title: "Circle Center",
+          snippet: "Drag to move circle",
+        ),
+      ),
+
+      // Radius handle
+      Marker(
+        markerId: MarkerId('${circle.id}_radius_handle'),
+        position: handle,
+        draggable: true,
+        icon: widget.controller.circleRadiusHandleIcon,
+        onDragEnd: (newPosition) {
+          widget.controller.updateCircleRadius(circle.id, newPosition);
+        },
+        infoWindow: InfoWindow(
+          title: "Radius",
+          snippet: "${circle.radius.toStringAsFixed(2)} meters",
+        ),
+      ),
+    };
+    widget.controller.googleMapController?.showMarkerInfoWindow(MarkerId('${circle.id}_radius_handle'));
+    return markers;
+  }
 
 
   @override
@@ -258,7 +302,11 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
           },
           polygons: {...?widget.polygons, ...widget.controller.mapPolygons},
           polylines: {...?widget.polylines, ...widget.controller.mapPolylines},
-          markers: {...?widget.markers, ..._buildEditingMarkers()},
+          markers: {
+            ...?widget.markers,
+            ..._buildEditingMarkers(),         // polygon
+            ..._buildCircleEditingMarkers(),   // circle
+          },
           onTap: (latLng) {
             _onMapTap(latLng);
             if(widget.onTap != null) {
@@ -271,10 +319,13 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
             if(widget.onCameraMove != null) {
               widget.onCameraMove!(position);
             }
-            widget.controller.updatedZoom = position.zoom;
+            widget.controller.currentZoom = position.zoom;
           },
           // Forward props
-          circles: widget.circles ?? const {},
+          circles: {
+            ...?widget.circles,
+            ...widget.controller.mapCircles,
+          },
           compassEnabled: widget.compassEnabled ?? true,
           mapType: widget.mapType ?? MapType.normal,
           trafficEnabled: widget.trafficEnabled ?? false,

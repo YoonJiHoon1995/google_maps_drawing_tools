@@ -56,21 +56,36 @@ class _MapDrawingScreenState extends State<MapDrawingScreen> {
             controller: _drawingController,
           ),
           Positioned(
+            bottom: 200,
+            right: 20,
+            child: FloatingActionButton(
+              onPressed: () {
+                if(_drawingController.currentMode == DrawMode.polygon) {
+                  _drawingController.deleteSelectedPolygon();
+                } else if(_drawingController.currentMode == DrawMode.circle) {
+                  _drawingController.deleteSelectedCircle();
+                }
+              },
+              tooltip: 'Delete',
+              child: const Icon(Icons.delete_forever),
+            ),
+          ),
+          Positioned(
             bottom: 140,
             right: 20,
             child: FloatingActionButton(
-              onPressed: () => _drawingController.deleteSelectedPolygon(),
-              tooltip: 'Clear All',
-              child: const Icon(Icons.delete_forever),
+              onPressed: () => _drawingController.setDrawMode(DrawMode.polygon),
+              tooltip: 'Draw Polygon',
+              child: Icon(_drawingController.currentMode == DrawMode.polygon ? Icons.pentagon : Icons.pentagon_outlined),
             ),
           ),
           Positioned(
             bottom: 80,
             right: 20,
             child: FloatingActionButton(
-              onPressed: () => _drawingController.setDrawMode(DrawMode.polygon),
-              tooltip: 'Draw Polygon',
-              child: const Icon(Icons.pentagon_outlined),
+              onPressed: () => _drawingController.setDrawMode(DrawMode.circle),
+              tooltip: 'Draw Circle',
+              child: Icon(_drawingController.currentMode == DrawMode.circle ? Icons.circle : Icons.circle_outlined),
             ),
           ),
           Positioned(
@@ -78,11 +93,9 @@ class _MapDrawingScreenState extends State<MapDrawingScreen> {
             right: 20,
             child: FloatingActionButton(
               onPressed: () {
-                if (_drawingController.currentMode == DrawMode.polygon) {
-                  _drawingController.finishPolygon();
-                }
+                _drawingController.setDrawMode(DrawMode.none);
               },
-              tooltip: 'Finish Polygon',
+              tooltip: 'Finish Shape',
               child: const Icon(Icons.check),
             ),
           ),

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:collection/collection.dart';
+import 'models/drawable_circle.dart';
 import 'models/drawable_polygon.dart';
 import 'models/drawable_polyline.dart';
 
@@ -14,14 +15,26 @@ enum DrawMode { none, polygon, polyline, circle, rectangle }
 typedef OnPolygonDrawn = void Function(DrawablePolygon polygon);
 
 class DrawingController extends ChangeNotifier {
-
-  DrawingController({this.onPolygonDrawn, this.onPolygonSelected, this.onPolygonUpdated, this.onPolygonDeleted, BitmapDescriptor? firstPolygonMarker, BitmapDescriptor? customPolygonMarker, BitmapDescriptor? midpointPolygonMarker,}) {
+  DrawingController({
+    this.onPolygonDrawn,
+    this.onPolygonSelected,
+    this.onPolygonUpdated,
+    this.onPolygonDeleted,
+    BitmapDescriptor? firstPolygonMarker,
+    BitmapDescriptor? customPolygonMarker,
+    BitmapDescriptor? midpointPolygonMarker,
+    BitmapDescriptor? circleCenterMarker,
+    BitmapDescriptor? circleRadiusHandle,
+  }) {
     // Set default custom icon if none is passed
     firstPolygonMarkerIcon = firstPolygonMarker ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen);
     customPolygonMarkerIcon = customPolygonMarker ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue);
     midpointPolygonMarkerIcon = midpointPolygonMarker ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueYellow);
+    circleCenterMarkerIcon = circleCenterMarker ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed);
+    circleRadiusHandleIcon = circleRadiusHandle ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange);
   }
 
+  /// Polygon Drawing Logic
   late BitmapDescriptor customPolygonMarkerIcon;
   late BitmapDescriptor firstPolygonMarkerIcon;
   late BitmapDescriptor midpointPolygonMarkerIcon;
@@ -45,7 +58,7 @@ class DrawingController extends ChangeNotifier {
   /// Called when a polygon is deleted
   void Function(String deletedPolygonId)? onPolygonDeleted;
 
-  double updatedZoom = 0;
+  double currentZoom = 0;
 
   DrawMode get currentMode => _currentMode;
   List<DrawablePolygon> get polygons => List.unmodifiable(_polygons);
@@ -62,12 +75,17 @@ class DrawingController extends ChangeNotifier {
   // Function to set a custom marker icon
   void setFirstPolygonCustomMarkerIcon(BitmapDescriptor icon) {
     firstPolygonMarkerIcon = icon;
-    notifyListeners();  // This will trigger the UI update to use the new icon
+    notifyListeners(); // This will trigger the UI update to use the new icon
+  }
+
+  void setMidpointPolygonCustomMarkerIcon(BitmapDescriptor icon) {
+    midpointPolygonMarkerIcon = icon;
+    notifyListeners(); // This will trigger the UI update to use the new icon
   }
 
   void setPolygonCustomMarkerIcon(BitmapDescriptor icon) {
     customPolygonMarkerIcon = icon;
-    notifyListeners();  // This will trigger the UI update to use the new icon
+    notifyListeners(); // This will trigger the UI update to use the new icon
   }
 
   void setColor(Color color) {
@@ -75,23 +93,40 @@ class DrawingController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateColor(String polygonId, Color newColor) {
-    final index = _polygons.indexWhere((p) => p.id == polygonId);
-    if (index == -1) return;
+  void updateColor(String id, Color newColor) {
+    if (currentMode == DrawMode.polygon) {
+      final index = _polygons.indexWhere((p) => p.id == id);
+      if (index == -1) return;
 
-    final oldPolygon = _polygons[index];
-    final updatedPolygon = oldPolygon.copyWith(strokeColor: newColor, fillColor: newColor.withValues(alpha: 0.2));
+      final oldPolygon = _polygons[index];
+      final updatedPolygon = oldPolygon.copyWith(strokeColor: newColor, fillColor: newColor.withValues(alpha: 0.2));
 
-    _polygons[index] = updatedPolygon;
+      _polygons[index] = updatedPolygon;
 
-    if (_selectedPolygon?.id == polygonId) {
-      _selectedPolygon = updatedPolygon;
+      if (_selectedPolygon?.id == id) {
+        _selectedPolygon = updatedPolygon;
+      }
+      onPolygonUpdated?.call(updatedPolygon);
+    } else if (currentMode == DrawMode.circle) {
+      final index = _drawableCircles.indexWhere((c) => c.id == id);
+      if (index == -1) return;
+
+      final oldCircle = _drawableCircles[index];
+      final updatedCircle = oldCircle.copyWith(strokeColor: newColor, fillColor: newColor.withOpacity(0.2));
+
+      _drawableCircles[index] = updatedCircle;
+
+      if (_selectedCircleId == id) {
+        _selectedCircleId = updatedCircle.id;
+      }
+      onCircleUpdated?.call(updatedCircle);
     }
 
     notifyListeners();
   }
 
   void setDrawMode(DrawMode mode) {
+    finishPolygon();
     _currentMode = mode;
     _activePolygon = null;
     _selectedPolygon = null;
@@ -99,18 +134,16 @@ class DrawingController extends ChangeNotifier {
   }
 
   double _calculateDistanceMeters(LatLng p1, LatLng p2) {
-    const R = 6371000; // Radius of Earth in meters
+    const earthRadius = 6371000; // Radius of Earth in meters
     final lat1 = p1.latitude * pi / 180;
     final lat2 = p2.latitude * pi / 180;
     final dLat = (p2.latitude - p1.latitude) * pi / 180;
     final dLng = (p2.longitude - p1.longitude) * pi / 180;
 
-    final a = sin(dLat / 2) * sin(dLat / 2) +
-        cos(lat1) * cos(lat2) *
-            sin(dLng / 2) * sin(dLng / 2);
+    final a = sin(dLat / 2) * sin(dLat / 2) + cos(lat1) * cos(lat2) * sin(dLng / 2) * sin(dLng / 2);
     final c = 2 * atan2(sqrt(a), sqrt(1 - a));
 
-    return R * c;
+    return earthRadius * c;
   }
 
   // Utility to detect proximity
@@ -128,11 +161,7 @@ class DrawingController extends ChangeNotifier {
 
     if (_activePolygon == null) {
       // First tap, start new polygon
-      _activePolygon = DrawablePolygon(
-        id: UniqueKey().toString(),
-        points: [point],
-        strokeColor: Colors.transparent,
-      );
+      _activePolygon = DrawablePolygon(id: UniqueKey().toString(), points: [point], strokeColor: Colors.transparent);
       _selectedPolygon = _activePolygon;
       _polygons.add(_activePolygon!);
 
@@ -146,9 +175,7 @@ class DrawingController extends ChangeNotifier {
 
       if (tappedFirstMarker && _activePolygon!.points.length > 2) {
         // Close polygon if tapped on first point
-        _activePolygon = _activePolygon!.copyWith(
-          points: [..._activePolygon!.points, firstPoint],
-        );
+        _activePolygon = _activePolygon!.copyWith(points: [..._activePolygon!.points, firstPoint]);
         finishPolygon();
         return;
       }
@@ -179,7 +206,7 @@ class DrawingController extends ChangeNotifier {
   double _snapThresholdForZoom(double zoom) {
     // At zoom 0, snap threshold ~300 meters
     // At zoom 21, snap threshold ~0.15 meters
-    const baseThreshold = 300.0;  // Starting threshold at zoom 0
+    const baseThreshold = 300.0; // Starting threshold at zoom 0
     final scaleFactor = pow(2, zoom); // 2^zoom scaling factor
 
     // Dynamically scale the threshold for higher zoom levels, but avoid too small thresholds
@@ -187,7 +214,11 @@ class DrawingController extends ChangeNotifier {
 
     // Prevent threshold from being too small at high zoom levels
     // Cap the threshold between 1 meter and 300 meters for reasonable behavior
-    return threshold < 1.0 ? 1.0 : threshold > 300.0 ? 300.0 : threshold;
+    return threshold < 1.0
+        ? 1.0
+        : threshold > 300.0
+        ? 300.0
+        : threshold;
   }
 
   bool isNearPoint(LatLng p1, LatLng p2, double zoom) {
@@ -201,11 +232,7 @@ class DrawingController extends ChangeNotifier {
   void finishPolygon() async {
     if (_activePolygon != null && _activePolygon!.points.length >= 3) {
       final points = _activePolygon!.points;
-      final finalizedPolygon = _activePolygon!.copyWith(
-        points: points,
-        strokeColor: currentDrawingColor,
-        fillColor: currentDrawingColor.withValues(alpha: 0.2),
-      );
+      final finalizedPolygon = _activePolygon!.copyWith(points: points, strokeColor: currentDrawingColor, fillColor: currentDrawingColor.withValues(alpha: 0.2));
       final index = _polygons.indexWhere((p) => p.id == _activePolygon!.id);
       if (index != -1) _polygons[index] = finalizedPolygon;
 
@@ -215,16 +242,12 @@ class DrawingController extends ChangeNotifier {
       // Finalize the polyline
       _polylines.removeWhere((p) => p.id == _activePolyline?.id);
       _activePolyline = null;
-
     }
 
     // Notify the host app about the drawn polygon(s)
     onPolygonDrawn?.call(_polygons);
-
-    _currentMode = DrawMode.none;
     notifyListeners();
   }
-
 
   void updatePolygonPoint(String polygonId, int pointIndex, LatLng newPoint) {
     final index = _polygons.indexWhere((p) => p.id == polygonId);
@@ -262,13 +285,8 @@ class DrawingController extends ChangeNotifier {
     onPolygonUpdated?.call(updatedPolygon);
   }
 
-
-
   LatLng midpoint(LatLng p1, LatLng p2) {
-    return LatLng(
-      (p1.latitude + p2.latitude) / 2,
-      (p1.longitude + p2.longitude) / 2,
-    );
+    return LatLng((p1.latitude + p2.latitude) / 2, (p1.longitude + p2.longitude) / 2);
   }
 
   void _updatePolygon(String polygonId, List<LatLng> newPoints) {
@@ -288,7 +306,6 @@ class DrawingController extends ChangeNotifier {
     notifyListeners();
   }
 
-
   void updateMidpointPosition(String polygonId, int index, LatLng newPosition) {
     final polygon = _selectedPolygon;
     if (polygon == null) return;
@@ -298,33 +315,22 @@ class DrawingController extends ChangeNotifier {
     final nextIndex = (index == points.length - 1) ? 0 : index + 1;
 
     // Current midpoint between prev and next
-    final currentMidpoint = LatLng(
-      (points[prevIndex].latitude + points[nextIndex].latitude) / 2,
-      (points[prevIndex].longitude + points[nextIndex].longitude) / 2,
-    );
+    final currentMidpoint = LatLng((points[prevIndex].latitude + points[nextIndex].latitude) / 2, (points[prevIndex].longitude + points[nextIndex].longitude) / 2);
 
     // Calculate delta from current midpoint to new position
     final latDelta = newPosition.latitude - currentMidpoint.latitude;
     final lngDelta = newPosition.longitude - currentMidpoint.longitude;
 
     // Move both prev and next points slightly toward the new midpoint
-    final newPrevPoint = LatLng(
-      points[prevIndex].latitude + latDelta / 2,
-      points[prevIndex].longitude + lngDelta / 2,
-    );
+    final newPrevPoint = LatLng(points[prevIndex].latitude + latDelta / 2, points[prevIndex].longitude + lngDelta / 2);
 
-    final newNextPoint = LatLng(
-      points[nextIndex].latitude + latDelta / 2,
-      points[nextIndex].longitude + lngDelta / 2,
-    );
+    final newNextPoint = LatLng(points[nextIndex].latitude + latDelta / 2, points[nextIndex].longitude + lngDelta / 2);
 
     points[prevIndex] = newPrevPoint;
     points[nextIndex] = newNextPoint;
 
     _updatePolygon(polygonId, points);
   }
-
-
 
   void insertMidpointAsVertex(String polygonId, int insertIndex, LatLng newPoint) {
     final index = _polygons.indexWhere((p) => p.id == polygonId);
@@ -344,7 +350,7 @@ class DrawingController extends ChangeNotifier {
       _selectedPolygon = null; // Deselect
     } else {
       _selectedPolygon = _polygons.firstWhereOrNull((p) => p.id == polygonId);
-      if(_selectedPolygon != null) {
+      if (_selectedPolygon != null) {
         onPolygonSelected?.call(_selectedPolygon!);
       }
     }
@@ -355,12 +361,10 @@ class DrawingController extends ChangeNotifier {
     return _polylines.map((dp) => dp.toGooglePolyline()).toSet();
   }
 
-
   void deselectPolygon() {
     _selectedPolygon = null;
     notifyListeners();
   }
-
 
   Set<Polygon> get mapPolygons {
     return _polygons.map((polygon) {
@@ -376,7 +380,6 @@ class DrawingController extends ChangeNotifier {
     }).toSet();
   }
 
-
   void clearAll() {
     _polygons.clear();
     _activePolygon = null;
@@ -390,6 +393,124 @@ class DrawingController extends ChangeNotifier {
       _selectedPolygon = null;
       notifyListeners();
       onPolygonDeleted?.call(_selectedPolygon!.id);
+    }
+  }
+
+  /// Circle Drawing Logic
+
+  /// Callback for when a circle is drawn
+  void Function(List<DrawableCircle> allCircles)? onCircleDrawn;
+
+  /// Called when a circle is selected
+  void Function(DrawableCircle selected)? onCircleSelected;
+
+  /// Called when a circle is updated (center or radius or color)
+  void Function(DrawableCircle updated)? onCircleUpdated;
+
+  /// Called when a circle is deleted
+  void Function(String deletedCircleId)? onCircleDeleted;
+
+  late BitmapDescriptor circleCenterMarkerIcon;
+  late BitmapDescriptor circleRadiusHandleIcon;
+
+  final List<DrawableCircle> _drawableCircles = [];
+  String? _selectedCircleId;
+  DrawableCircle? _selectedCircle;
+
+  DrawableCircle? get selectedCircle => _drawableCircles.firstWhereOrNull((c) => c.id == _selectedCircleId);
+
+  void setCircleCenterMarkerIcon(BitmapDescriptor icon) {
+    circleCenterMarkerIcon = icon;
+    notifyListeners();
+  }
+
+  void setCircleRadiusHandleIcon(BitmapDescriptor icon) {
+    circleRadiusHandleIcon = icon;
+    notifyListeners();
+  }
+
+  void selectCircle(String id) {
+    _selectedCircleId = id;
+    notifyListeners();
+    _selectedCircle = _drawableCircles.firstWhereOrNull((p) => p.id == id);
+    if (_selectedCircle != null) {
+      onCircleSelected?.call(_selectedCircle!);
+    }
+  }
+
+  Set<Circle> get mapCircles => _drawableCircles.map((e) => e.toCircle(onTap: (pos) => selectCircle(e.id))).toSet();
+
+  void addCircle(LatLng center, double zoom) {
+    final id = 'circle_${DateTime.now().millisecondsSinceEpoch}';
+    final radius = _initialRadiusFromZoom(zoom);
+
+    final newCircle = DrawableCircle(id: id, center: center, radius: radius, strokeColor: _currentDrawingColor, fillColor: _currentDrawingColor.withValues(alpha: 0.2));
+    _drawableCircles.add(newCircle);
+    selectCircle(id);
+    onCircleDrawn?.call(_drawableCircles);
+    notifyListeners();
+  }
+
+  double _initialRadiusFromZoom(double zoom) {
+    // Approximate radius in meters based on zoom (tweak as needed)
+    // Lower zoom → larger radius, higher zoom → smaller radius
+    const zoomToRadius = {10: 2000.0, 11: 1500.0, 12: 1000.0, 13: 750.0, 14: 500.0, 15: 250.0, 16: 150.0, 17: 100.0, 18: 75.0, 19: 50.0, 20: 25.0};
+
+    for (final entry in zoomToRadius.entries.toList().reversed) {
+      if (zoom >= entry.key) return entry.value;
+    }
+    return 2000.0; // fallback
+  }
+
+  void deselectCircle() {
+    _selectedCircleId = null;
+    notifyListeners();
+  }
+
+  void updateCircleCenter(String id, LatLng newCenter) {
+    final index = _drawableCircles.indexWhere((c) => c.id == id);
+    if (index == -1) return;
+
+    final updated = _drawableCircles[index].copyWith(center: newCenter);
+    _drawableCircles[index] = updated;
+    googleMapController?.showMarkerInfoWindow(MarkerId('${id}_radius_handle'));
+    notifyListeners();
+    onCircleUpdated?.call(updated);
+  }
+
+  void updateCircleRadius(String id, LatLng handlePosition) {
+    final index = _drawableCircles.indexWhere((c) => c.id == id);
+    if (index == -1) return;
+
+    final circle = _drawableCircles[index];
+    final newRadius = _calculateDistanceMeters(circle.center, handlePosition);
+    final updated = circle.copyWith(radius: newRadius);
+
+    _drawableCircles[index] = updated;
+    googleMapController?.showMarkerInfoWindow(MarkerId('${circle.id}_radius_handle'));
+    notifyListeners();
+    onCircleUpdated?.call(updated);
+  }
+
+  double _degreesToRadians(double deg) => deg * (pi / 180);
+
+  /// Place handle due east of center at current radius
+  LatLng computeRadiusHandle(LatLng center, double radiusMeters) {
+    const double earthRadius = 6371000; // in meters
+    final dLat = 0.0;
+    final dLng = (radiusMeters / earthRadius) * (180 / pi) / cos(center.latitude * pi / 180);
+    return LatLng(center.latitude + dLat, center.longitude + dLng);
+  }
+
+  void deleteSelectedCircle() {
+    if (_selectedCircleId != null) {
+      final deletedId = _selectedCircleId;
+      _drawableCircles.removeWhere((c) => c.id == deletedId);
+      _selectedCircleId = null;
+      notifyListeners();
+      if (deletedId != null) {
+        onCircleDeleted?.call(deletedId);
+      }
     }
   }
 }
