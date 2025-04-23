@@ -102,6 +102,12 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
   }
 
   @override
+  void didUpdateWidget(DrawingMapWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _isDrawingRectangle = widget.controller.currentMode == DrawMode.rectangle;
+  }
+
+  @override
   void dispose() {
     widget.controller.removeListener(_onControllerChanged);
     super.dispose();
@@ -112,10 +118,19 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
   }
 
   void _onMapTap(LatLng position) {
+    print("_onMapTap");
     if (widget.controller.currentMode == DrawMode.polygon) {
       widget.controller.addPolygonPoint(position);
     } else if (widget.controller.currentMode == DrawMode.circle) {
       widget.controller.addCircle(position, widget.controller.currentZoom);
+    } else if(widget.controller.currentMode == DrawMode.rectangle) {
+      if (_isDrawingRectangle && _rectangleStartPoint == null) {
+        _rectangleStartPoint = position;
+        widget.controller.startDrawingRectangle(position);
+      } else if (_isDrawingRectangle && _rectangleStartPoint != null) {
+        widget.controller.finishDrawingRectangle();
+        _rectangleStartPoint = null;
+      }
     } else {
       widget.controller.deselectPolygon();
       widget.controller.deselectCircle(); // <- Add this
@@ -286,76 +301,142 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
     return markers;
   }
 
+  bool _isDrawingRectangle = false;
+  LatLng? _rectangleStartPoint;
+
+  Polygon? get drawingRectanglePolygon {
+    final rect = widget.controller.drawingRectangle;
+    if (rect == null) return null;
+
+    final sw = rect.bounds.southwest;
+    final ne = rect.bounds.northeast;
+
+    final nw = LatLng(ne.latitude, sw.longitude);
+    final se = LatLng(sw.latitude, ne.longitude);
+
+    return Polygon(
+      polygonId: PolygonId(rect.id),
+      points: [sw, se, ne, nw, sw],
+      strokeWidth: 2,
+      strokeColor: Colors.red,
+      fillColor: Colors.red.withOpacity(0.15),
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
-    return Builder(
-      builder: (context) {
-        return GoogleMap(
-          key: widget.key,
-          initialCameraPosition: widget.initialCameraPosition,
-          onMapCreated: (controller) {
-            widget.controller.googleMapController = controller;
-            if(widget.onMapCreated != null) {
-              widget.onMapCreated!(controller);
-            }
-          },
-          polygons: {...?widget.polygons, ...widget.controller.mapPolygons},
-          polylines: {...?widget.polylines, ...widget.controller.mapPolylines},
-          markers: {
-            ...?widget.markers,
-            ..._buildEditingMarkers(),         // polygon
-            ..._buildCircleEditingMarkers(),   // circle
-          },
-          onTap: (latLng) {
-            _onMapTap(latLng);
-            if(widget.onTap != null) {
-              widget.onTap!(latLng);
-            }
-          },
-          myLocationEnabled: widget.myLocationEnabled,
-          myLocationButtonEnabled: widget.myLocationButtonEnabled,
-          onCameraMove: (position) {
-            if(widget.onCameraMove != null) {
-              widget.onCameraMove!(position);
-            }
-            widget.controller.currentZoom = position.zoom;
-          },
-          // Forward props
-          circles: {
-            ...?widget.circles,
-            ...widget.controller.mapCircles,
-          },
-          compassEnabled: widget.compassEnabled ?? true,
-          mapType: widget.mapType ?? MapType.normal,
-          trafficEnabled: widget.trafficEnabled ?? false,
-          rotateGesturesEnabled: widget.rotateGesturesEnabled ?? true,
-          tiltGesturesEnabled: widget.tiltGesturesEnabled ?? true,
-          zoomGesturesEnabled: widget.zoomGesturesEnabled ?? true,
-          scrollGesturesEnabled: widget.scrollGesturesEnabled ?? true,
-          zoomControlsEnabled: widget.zoomControlsEnabled ?? true,
-          indoorViewEnabled: widget.indoorViewEnabled ?? false,
-          buildingsEnabled: widget.buildingsEnabled ?? true,
-          cameraTargetBounds: widget.cameraTargetBounds ?? CameraTargetBounds.unbounded,
-          minMaxZoomPreference: widget.minMaxZoomPreference ?? MinMaxZoomPreference.unbounded,
-          tileOverlays: widget.tileOverlays ?? const {},
-          padding: widget.padding,
-          mapToolbarEnabled: widget.mapToolbarEnabled,
-          onLongPress: widget.onLongPress,
-          style: widget.style,
-          cloudMapId: widget.cloudMapId,
-          clusterManagers: widget.clusterManagers,
-          fortyFiveDegreeImageryEnabled: widget.fortyFiveDegreeImageryEnabled,
-          gestureRecognizers: widget.gestureRecognizers,
-          groundOverlays: widget.groundOverlays,
-          heatmaps: widget.heatmaps,
-          layoutDirection: widget.layoutDirection,
-          liteModeEnabled: widget.liteModeEnabled,
-          onCameraIdle: widget.onCameraIdle,
-          onCameraMoveStarted: widget.onCameraMoveStarted,
-          webGestureHandling: widget.webGestureHandling,
-        );
-      }
+    return GestureDetector(
+      // onPanStart: (details) async {
+      //   if (_isDrawingRectangle && _rectangleStartPoint == null) {
+      //     // Get RenderBox from context
+      //     final box = context.findRenderObject() as RenderBox?;
+      //     if (box != null) {
+      //       final localOffset = box.globalToLocal(details.globalPosition);
+      //
+      //       // Get the LatLng for the pan start position
+      //       final newLatLng = await widget.controller.googleMapController!.getLatLng(
+      //         ScreenCoordinate(
+      //           x: localOffset.dx.round() * 3,
+      //           y: localOffset.dy.round() * 3,
+      //         ),
+      //       );
+      //
+      //       // Set the start point of the rectangle
+      //       _rectangleStartPoint = newLatLng;
+      //       widget.controller.startDrawingRectangle(newLatLng);
+      //     }
+      //   } else if (_isDrawingRectangle && _rectangleStartPoint != null) {
+      //     widget.controller.finishDrawingRectangle();
+      //     _rectangleStartPoint = null;
+      //   }
+      // },
+      onPanUpdate: (details) async {
+        if (_isDrawingRectangle && _rectangleStartPoint != null && widget.controller.googleMapController != null) {
+          // Get RenderBox from context
+          final box = context.findRenderObject() as RenderBox?;
+          if (box != null) {
+            final localOffset = box.globalToLocal(details.globalPosition);
+            final newLatLng = await widget.controller.googleMapController!.getLatLng(
+              ScreenCoordinate(
+                x: localOffset.dx.round() * 3,
+                y: localOffset.dy.round() * 3,
+              ),
+            );
+            widget.controller.updateDrawingRectangle(newLatLng);
+          }
+        }
+      },
+      behavior: HitTestBehavior.translucent,
+      child: GoogleMap(
+        key: widget.key,
+        initialCameraPosition: widget.initialCameraPosition,
+        onMapCreated: (controller) {
+          widget.controller.googleMapController = controller;
+          if(widget.onMapCreated != null) {
+            widget.onMapCreated!(controller);
+          }
+        },
+        polygons: {
+          ...?widget.polygons,
+          ...widget.controller.mapPolygons,
+          if (drawingRectanglePolygon != null)
+            drawingRectanglePolygon!,
+        },
+        polylines: {...?widget.polylines, ...widget.controller.mapPolylines},
+        markers: {
+          ...?widget.markers,
+          ..._buildEditingMarkers(),         // polygon
+          ..._buildCircleEditingMarkers(),   // circle
+        },
+        onTap: (latLng) {
+          _onMapTap(latLng);
+          if(widget.onTap != null) {
+            widget.onTap!(latLng);
+          }
+        },
+        myLocationEnabled: widget.myLocationEnabled,
+        myLocationButtonEnabled: widget.myLocationButtonEnabled,
+        onCameraMove: (position) {
+          if(widget.onCameraMove != null) {
+            widget.onCameraMove!(position);
+          }
+          widget.controller.currentZoom = position.zoom;
+        },
+        // Forward props
+        circles: {
+          ...?widget.circles,
+          ...widget.controller.mapCircles,
+        },
+        compassEnabled: widget.compassEnabled ?? true,
+        mapType: widget.mapType ?? MapType.normal,
+        trafficEnabled: widget.trafficEnabled ?? false,
+        rotateGesturesEnabled: widget.rotateGesturesEnabled ?? true,
+        tiltGesturesEnabled: widget.tiltGesturesEnabled ?? true,
+        zoomGesturesEnabled: widget.zoomGesturesEnabled ?? true,
+        scrollGesturesEnabled: widget.scrollGesturesEnabled ?? true,
+        zoomControlsEnabled: widget.zoomControlsEnabled ?? true,
+        indoorViewEnabled: widget.indoorViewEnabled ?? false,
+        buildingsEnabled: widget.buildingsEnabled ?? true,
+        cameraTargetBounds: widget.cameraTargetBounds ?? CameraTargetBounds.unbounded,
+        minMaxZoomPreference: widget.minMaxZoomPreference ?? MinMaxZoomPreference.unbounded,
+        tileOverlays: widget.tileOverlays ?? const {},
+        padding: widget.padding,
+        mapToolbarEnabled: widget.mapToolbarEnabled,
+        onLongPress: widget.onLongPress,
+        style: widget.style,
+        cloudMapId: widget.cloudMapId,
+        clusterManagers: widget.clusterManagers,
+        fortyFiveDegreeImageryEnabled: widget.fortyFiveDegreeImageryEnabled,
+        gestureRecognizers: widget.gestureRecognizers,
+        groundOverlays: widget.groundOverlays,
+        heatmaps: widget.heatmaps,
+        layoutDirection: widget.layoutDirection,
+        liteModeEnabled: widget.liteModeEnabled,
+        onCameraIdle: widget.onCameraIdle,
+        onCameraMoveStarted: widget.onCameraMoveStarted,
+        webGestureHandling: widget.webGestureHandling,
+      ),
     );
   }
 }

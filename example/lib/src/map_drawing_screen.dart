@@ -56,7 +56,7 @@ class _MapDrawingScreenState extends State<MapDrawingScreen> {
             controller: _drawingController,
           ),
           Positioned(
-            bottom: 200,
+            bottom: 260,
             right: 20,
             child: FloatingActionButton(
               onPressed: () {
@@ -71,12 +71,21 @@ class _MapDrawingScreenState extends State<MapDrawingScreen> {
             ),
           ),
           Positioned(
-            bottom: 140,
+            bottom: 200,
             right: 20,
             child: FloatingActionButton(
               onPressed: () => _drawingController.setDrawMode(DrawMode.polygon),
               tooltip: 'Draw Polygon',
               child: Icon(_drawingController.currentMode == DrawMode.polygon ? Icons.pentagon : Icons.pentagon_outlined),
+            ),
+          ),
+          Positioned(
+            bottom: 140,
+            right: 20,
+            child: FloatingActionButton(
+              onPressed: () => _drawingController.setDrawMode(DrawMode.rectangle),
+              tooltip: 'Draw Rectangle',
+              child: Icon(_drawingController.currentMode == DrawMode.rectangle ? Icons.rectangle : Icons.rectangle_outlined),
             ),
           ),
           Positioned(

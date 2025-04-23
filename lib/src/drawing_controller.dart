@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_drawing_tools/src/models/drawable_rectangle.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:collection/collection.dart';
 import 'models/drawable_circle.dart';
@@ -367,7 +368,7 @@ class DrawingController extends ChangeNotifier {
   }
 
   Set<Polygon> get mapPolygons {
-    return _polygons.map((polygon) {
+    Set<Polygon> polygons = _polygons.map((polygon) {
       return Polygon(
         polygonId: PolygonId(polygon.id),
         points: polygon.points,
@@ -378,6 +379,18 @@ class DrawingController extends ChangeNotifier {
         onTap: () => selectPolygon(polygon.id),
       );
     }).toSet();
+
+    // Draw existing rectangles
+    for (final rect in rectangles) {
+      polygons.add(rect.toPolygon());
+    }
+
+    // Draw rectangle in progress
+    if (drawingRectangle != null) {
+      polygons.add(drawingRectangle!.toPolygon());
+    }
+
+    return polygons;
   }
 
   void clearAll() {
@@ -512,4 +525,54 @@ class DrawingController extends ChangeNotifier {
       }
     }
   }
+
+
+  /// Draw Rectangle Logic
+
+  List<DrawableRectangle> _rectangles = [];
+  DrawableRectangle? _drawingRectangle;
+
+  List<DrawableRectangle> get rectangles => _rectangles;
+  DrawableRectangle? get drawingRectangle => _drawingRectangle;
+
+  void startDrawingRectangle(LatLng start) {
+    final id = 'rectangle_${DateTime.now().millisecondsSinceEpoch}';
+    final bounds = LatLngBounds(southwest: start, northeast: start);
+
+    _drawingRectangle = DrawableRectangle(id: id, bounds: bounds, anchor: start);
+    notifyListeners();
+  }
+
+  void updateDrawingRectangle(LatLng current) {
+    if (_drawingRectangle == null) return;
+
+    final anchor = _drawingRectangle!.anchor; // <-- add this to your model: the original start point
+
+    final swLat = min(anchor.latitude, current.latitude);
+    final swLng = min(anchor.longitude, current.longitude);
+
+    final neLat = max(anchor.latitude, current.latitude);
+    final neLng = max(anchor.longitude, current.longitude);
+
+    final sw = LatLng(swLat, swLng);
+    final ne = LatLng(neLat, neLng);
+
+    _drawingRectangle = _drawingRectangle!.copyWith(
+      bounds: LatLngBounds(southwest: sw, northeast: ne),
+    );
+
+    notifyListeners();
+  }
+
+  void finishDrawingRectangle() {
+    if (_drawingRectangle != null) {
+      _rectangles.add(_drawingRectangle!);
+      _drawingRectangle = null;
+      notifyListeners();
+    }
+  }
+
+  double _min(double a, double b) => a < b ? a : b;
+  double _max(double a, double b) => a > b ? a : b;
+
 }
