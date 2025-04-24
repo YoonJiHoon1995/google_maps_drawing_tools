@@ -319,7 +319,7 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
       points: [sw, se, ne, nw, sw],
       strokeWidth: 2,
       strokeColor: Colors.red,
-      fillColor: Colors.red.withOpacity(0.15),
+      fillColor: Colors.red.withValues(alpha: 0.2),
     );
   }
 
@@ -327,46 +327,22 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      // onPanStart: (details) async {
-      //   if (_isDrawingRectangle && _rectangleStartPoint == null) {
-      //     // Get RenderBox from context
-      //     final box = context.findRenderObject() as RenderBox?;
-      //     if (box != null) {
-      //       final localOffset = box.globalToLocal(details.globalPosition);
-      //
-      //       // Get the LatLng for the pan start position
-      //       final newLatLng = await widget.controller.googleMapController!.getLatLng(
-      //         ScreenCoordinate(
-      //           x: localOffset.dx.round() * 3,
-      //           y: localOffset.dy.round() * 3,
-      //         ),
-      //       );
-      //
-      //       // Set the start point of the rectangle
-      //       _rectangleStartPoint = newLatLng;
-      //       widget.controller.startDrawingRectangle(newLatLng);
-      //     }
-      //   } else if (_isDrawingRectangle && _rectangleStartPoint != null) {
-      //     widget.controller.finishDrawingRectangle();
-      //     _rectangleStartPoint = null;
-      //   }
-      // },
-      onPanUpdate: (details) async {
-        if (_isDrawingRectangle && _rectangleStartPoint != null && widget.controller.googleMapController != null) {
+      onPanUpdate: _isDrawingRectangle ? (details) async {
+        if (_rectangleStartPoint != null && widget.controller.googleMapController != null) {
           // Get RenderBox from context
           final box = context.findRenderObject() as RenderBox?;
           if (box != null) {
             final localOffset = box.globalToLocal(details.globalPosition);
             final newLatLng = await widget.controller.googleMapController!.getLatLng(
               ScreenCoordinate(
-                x: localOffset.dx.round() * 3,
-                y: localOffset.dy.round() * 3,
+                x: (localOffset.dx * 2.55).round(),
+                y: (localOffset.dy * 2.55).round(),
               ),
             );
             widget.controller.updateDrawingRectangle(newLatLng);
           }
         }
-      },
+      } : null,
       behavior: HitTestBehavior.translucent,
       child: GoogleMap(
         key: widget.key,

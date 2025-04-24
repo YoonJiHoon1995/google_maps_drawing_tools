@@ -546,7 +546,7 @@ class DrawingController extends ChangeNotifier {
   void updateDrawingRectangle(LatLng current) {
     if (_drawingRectangle == null) return;
 
-    final anchor = _drawingRectangle!.anchor; // <-- add this to your model: the original start point
+    final anchor = _drawingRectangle!.anchor; // <-- the original start point
 
     final swLat = min(anchor.latitude, current.latitude);
     final swLng = min(anchor.longitude, current.longitude);
@@ -571,8 +571,4 @@ class DrawingController extends ChangeNotifier {
       notifyListeners();
     }
   }
-
-  double _min(double a, double b) => a < b ? a : b;
-  double _max(double a, double b) => a > b ? a : b;
-
 }
