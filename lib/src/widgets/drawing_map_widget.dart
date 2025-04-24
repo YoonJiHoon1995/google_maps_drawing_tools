@@ -118,24 +118,43 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
   }
 
   void _onMapTap(LatLng position) {
-    print("_onMapTap");
-    if (widget.controller.currentMode == DrawMode.polygon) {
-      widget.controller.addPolygonPoint(position);
-    } else if (widget.controller.currentMode == DrawMode.circle) {
-      widget.controller.addCircle(position, widget.controller.currentZoom);
-    } else if(widget.controller.currentMode == DrawMode.rectangle) {
-      if (_isDrawingRectangle && _rectangleStartPoint == null) {
-        _rectangleStartPoint = position;
+    switch (widget.controller.currentMode) {
+      case DrawMode.polygon:
+        widget.controller.addPolygonPoint(position);
+        break;
+
+      case DrawMode.circle:
+        widget.controller.addCircle(position, widget.controller.currentZoom);
+        break;
+
+      case DrawMode.rectangle:
+      // 1. Check if selecting a rectangle
+        final didSelect = widget.controller.selectRectangleAt(position);
+        if (didSelect) {
+          widget.controller.onRectangleSelected?.call(widget.controller.selectedRectangleId!);
+          return;
+        }
+
+        // 2. If we're actively drawing (second tap), finish
+        if (_activeDrawingStart != null) {
+          widget.controller.finishDrawingRectangle();
+          _activeDrawingStart = null;
+          return;
+        }
+
+        // 3. Otherwise, begin drawing
+        _activeDrawingStart = position;
         widget.controller.startDrawingRectangle(position);
-      } else if (_isDrawingRectangle && _rectangleStartPoint != null) {
-        widget.controller.finishDrawingRectangle();
-        _rectangleStartPoint = null;
-      }
-    } else {
-      widget.controller.deselectPolygon();
-      widget.controller.deselectCircle(); // <- Add this
+        break;
+
+      default:
+        widget.controller.deselectPolygon();
+        widget.controller.deselectCircle();
+        widget.controller.deselectRectangle();
     }
   }
+
+
 
   Set<Marker> _buildEditingMarkers() {
     final selected = widget.controller.selectedPolygon;
@@ -302,7 +321,7 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
   }
 
   bool _isDrawingRectangle = false;
-  LatLng? _rectangleStartPoint;
+  LatLng? _activeDrawingStart;
 
   Polygon? get drawingRectanglePolygon {
     final rect = widget.controller.drawingRectangle;
@@ -310,7 +329,6 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
 
     final sw = rect.bounds.southwest;
     final ne = rect.bounds.northeast;
-
     final nw = LatLng(ne.latitude, sw.longitude);
     final se = LatLng(sw.latitude, ne.longitude);
 
@@ -318,17 +336,37 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
       polygonId: PolygonId(rect.id),
       points: [sw, se, ne, nw, sw],
       strokeWidth: 2,
-      strokeColor: Colors.red,
-      fillColor: Colors.red.withValues(alpha: 0.2),
+      strokeColor: rect.strokeColor,
+      fillColor: rect.fillColor,
     );
   }
+
+  Set<Polygon> get allRectanglePolygons {
+    return widget.controller.rectangles.map((rect) {
+      final sw = rect.bounds.southwest;
+      final ne = rect.bounds.northeast;
+      final nw = LatLng(ne.latitude, sw.longitude);
+      final se = LatLng(sw.latitude, ne.longitude);
+
+      final isSelected = widget.controller.selectedRectangleId == rect.id;
+
+      return Polygon(
+        polygonId: PolygonId(rect.id),
+        points: [sw, se, ne, nw, sw],
+        strokeWidth: isSelected ? 4 : 2,
+        strokeColor: rect.strokeColor,
+        fillColor: rect.fillColor,
+      );
+    }).toSet();
+  }
+
 
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onPanUpdate: _isDrawingRectangle ? (details) async {
-        if (_rectangleStartPoint != null && widget.controller.googleMapController != null) {
+      onPanUpdate: _isDrawingRectangle && widget.controller.selectedRectangle == null ? (details) async {
+        if (_activeDrawingStart != null && widget.controller.googleMapController != null) {
           // Get RenderBox from context
           final box = context.findRenderObject() as RenderBox?;
           if (box != null) {
@@ -356,14 +394,17 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
         polygons: {
           ...?widget.polygons,
           ...widget.controller.mapPolygons,
+          ...allRectanglePolygons,
           if (drawingRectanglePolygon != null)
             drawingRectanglePolygon!,
         },
         polylines: {...?widget.polylines, ...widget.controller.mapPolylines},
         markers: {
           ...?widget.markers,
-          ..._buildEditingMarkers(),         // polygon
-          ..._buildCircleEditingMarkers(),   // circle
+          ...widget.controller.rectangleStartMarker != null ? [widget.controller.rectangleStartMarker!] : [],
+          ..._buildEditingMarkers(),       // polygon
+          ..._buildCircleEditingMarkers(), // circle
+          ...widget.controller.rectangleEditHandles,
         },
         onTap: (latLng) {
           _onMapTap(latLng);

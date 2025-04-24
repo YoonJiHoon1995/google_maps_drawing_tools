@@ -26,6 +26,7 @@ class DrawingController extends ChangeNotifier {
     BitmapDescriptor? midpointPolygonMarker,
     BitmapDescriptor? circleCenterMarker,
     BitmapDescriptor? circleRadiusHandle,
+    BitmapDescriptor? rectangleStartMarker,
   }) {
     // Set default custom icon if none is passed
     firstPolygonMarkerIcon = firstPolygonMarker ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen);
@@ -33,6 +34,7 @@ class DrawingController extends ChangeNotifier {
     midpointPolygonMarkerIcon = midpointPolygonMarker ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueYellow);
     circleCenterMarkerIcon = circleCenterMarker ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed);
     circleRadiusHandleIcon = circleRadiusHandle ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange);
+    rectangleStartMarkerIcon = rectangleStartMarker ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure);
   }
 
   /// Polygon Drawing Logic
@@ -128,6 +130,7 @@ class DrawingController extends ChangeNotifier {
 
   void setDrawMode(DrawMode mode) {
     finishPolygon();
+    finishDrawingRectangle();
     _currentMode = mode;
     _activePolygon = null;
     _selectedPolygon = null;
@@ -534,12 +537,29 @@ class DrawingController extends ChangeNotifier {
 
   List<DrawableRectangle> get rectangles => _rectangles;
   DrawableRectangle? get drawingRectangle => _drawingRectangle;
+  String? _selectedRectangleId;
+  String? get selectedRectangleId => _selectedRectangleId;
+  void Function(String rectangleId)? onRectangleSelected;
+  late BitmapDescriptor rectangleStartMarkerIcon;
+  Marker? _rectangleStartMarker;
+  Marker? get rectangleStartMarker => _rectangleStartMarker;
+
+  void setRectangleStartMarkerIcon(BitmapDescriptor icon) {
+    rectangleStartMarkerIcon = icon;
+    notifyListeners();
+  }
+
 
   void startDrawingRectangle(LatLng start) {
     final id = 'rectangle_${DateTime.now().millisecondsSinceEpoch}';
     final bounds = LatLngBounds(southwest: start, northeast: start);
 
-    _drawingRectangle = DrawableRectangle(id: id, bounds: bounds, anchor: start);
+    _drawingRectangle = DrawableRectangle(id: id, bounds: bounds, anchor: start, fillColor: _currentDrawingColor.withValues(alpha: 0.2), strokeColor: _currentDrawingColor);
+    _rectangleStartMarker = Marker(
+      markerId: MarkerId('rectangle_start_$id'),
+      position: start,
+      icon: rectangleStartMarkerIcon,
+    );
     notifyListeners();
   }
 
@@ -568,7 +588,144 @@ class DrawingController extends ChangeNotifier {
     if (_drawingRectangle != null) {
       _rectangles.add(_drawingRectangle!);
       _drawingRectangle = null;
+      _rectangleStartMarker = null;
       notifyListeners();
     }
   }
+
+  bool selectRectangleAt(LatLng tapPosition) {
+    for (final rect in _rectangles) {
+      final sw = LatLng(
+        min(rect.bounds.southwest.latitude, rect.bounds.northeast.latitude),
+        min(rect.bounds.southwest.longitude, rect.bounds.northeast.longitude),
+      );
+      final ne = LatLng(
+        max(rect.bounds.southwest.latitude, rect.bounds.northeast.latitude),
+        max(rect.bounds.southwest.longitude, rect.bounds.northeast.longitude),
+      );
+
+      // Add a tolerance threshold to ensure you select the rectangle when tapping near the boundary
+      const threshold = 0.0001; // You can adjust this threshold based on zoom level
+
+      if (tapPosition.latitude >= (sw.latitude - threshold) &&
+          tapPosition.latitude <= (ne.latitude + threshold) &&
+          tapPosition.longitude >= (sw.longitude - threshold) &&
+          tapPosition.longitude <= (ne.longitude + threshold)) {
+        _selectedRectangleId = rect.id;
+        print('Selected rectangle ID: ${rect.id}');
+        notifyListeners();
+        onRectangleSelected?.call(rect.id); // <-- fire callback
+        return true;
+      }
+    }
+
+    _selectedRectangleId = null;
+    return false;
+  }
+
+
+  DrawableRectangle? get selectedRectangle {
+    if (_selectedRectangleId == null) return null;
+    return _rectangles.firstWhereOrNull((r) => r.id == _selectedRectangleId);
+  }
+
+
+  void deselectRectangle() {
+    if (_selectedRectangleId != null) {
+      _selectedRectangleId = null;
+      notifyListeners();
+    }
+  }
+
+  void deleteSelectedRectangle() {
+    if (_selectedRectangleId != null) {
+      _rectangles.removeWhere((r) => r.id == _selectedRectangleId);
+      _selectedRectangleId = null;
+      notifyListeners();
+    }
+  }
+
+  List<Marker>? _rectangleEditHandles;
+
+  List<Marker> get rectangleEditHandles {
+    final rect = selectedRectangle;
+    if (rect == null) return [];
+
+    final sw = rect.bounds.southwest;
+    final ne = rect.bounds.northeast;
+    final nw = LatLng(ne.latitude, sw.longitude);
+    final se = LatLng(sw.latitude, ne.longitude);
+
+    _rectangleEditHandles = [
+      _buildEditHandle(sw, 'sw'),
+      _buildEditHandle(se, 'se'),
+      _buildEditHandle(ne, 'ne'),
+      _buildEditHandle(nw, 'nw'),
+    ];
+
+    return _rectangleEditHandles!;
+  }
+
+  LatLng? currentPos;
+
+  Marker _buildEditHandle(LatLng pos, String cornerId) {
+    return Marker(
+      markerId: MarkerId('handle_$cornerId'),
+      position: pos,
+      draggable: true,
+      icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+      onDragStart: (currentPos) {
+        this.currentPos = currentPos;
+      },
+      onDragEnd: (newPos) {
+        _updateRectangleCorner(cornerId, newPos);
+      },
+    );
+  }
+
+  void _updateRectangleCorner(String cornerId, LatLng newPos) {
+    final rect = selectedRectangle;
+    if (rect == null) return;
+
+    LatLng sw = rect.bounds.southwest;
+    LatLng ne = rect.bounds.northeast;
+
+    switch (cornerId) {
+      case 'sw':
+        sw = LatLng(newPos.latitude, newPos.longitude);
+        break;
+      case 'se':
+        sw = LatLng(newPos.latitude, sw.longitude);
+        ne = LatLng(ne.latitude, newPos.longitude);
+        break;
+      case 'ne':
+        ne = LatLng(newPos.latitude, newPos.longitude);
+        break;
+      case 'nw':
+        sw = LatLng(sw.latitude, newPos.longitude);
+        ne = LatLng(newPos.latitude, ne.longitude);
+        break;
+    }
+
+    try {
+      final updated = rect.copyWith(
+        bounds: LatLngBounds(southwest: sw, northeast: ne),
+      );
+
+      final index = _rectangles.indexWhere((r) => r.id == rect.id);
+      if (index != -1) {
+        _rectangles[index] = updated;
+        notifyListeners();
+      }
+    } catch(e) {
+      int index = _rectangleEditHandles?.indexWhere((element) => element.markerId.value == 'handle_$cornerId',) ?? -1;
+      if(index >= 0) {
+        Marker cornerMarker = _rectangleEditHandles![index];
+        _rectangleEditHandles![index] = cornerMarker.copyWith(positionParam: currentPos);
+        notifyListeners();
+      }
+    }
+
+  }
+
 }

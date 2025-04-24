@@ -7,6 +7,7 @@ class DrawableRectangle {
   final Color strokeColor;
   final Color fillColor;
   final int strokeWidth;
+  final bool isSelected;
   final bool editable;
   final LatLng anchor;
 
@@ -17,6 +18,7 @@ class DrawableRectangle {
     this.strokeColor = Colors.blue,
     this.fillColor = Colors.transparent,
     this.strokeWidth = 2,
+    this.isSelected = false,
     this.editable = true,
   });
 
@@ -44,6 +46,7 @@ class DrawableRectangle {
     int? strokeWidth,
     bool? editable,
     LatLng? anchor,
+    bool? isSelected,
   }) {
     return DrawableRectangle(
       id: id,
@@ -51,8 +54,16 @@ class DrawableRectangle {
       strokeColor: strokeColor ?? this.strokeColor,
       fillColor: fillColor ?? this.fillColor,
       strokeWidth: strokeWidth ?? this.strokeWidth,
+      isSelected: isSelected ?? this.isSelected,
       editable: editable ?? this.editable,
       anchor: anchor ?? this.anchor,
     );
+  }
+
+  bool contains(LatLng point) {
+    return point.latitude >= bounds.southwest.latitude &&
+        point.latitude <= bounds.northeast.latitude &&
+        point.longitude >= bounds.southwest.longitude &&
+        point.longitude <= bounds.northeast.longitude;
   }
 }

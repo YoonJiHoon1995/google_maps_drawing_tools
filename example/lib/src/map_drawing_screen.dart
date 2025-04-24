@@ -64,6 +64,8 @@ class _MapDrawingScreenState extends State<MapDrawingScreen> {
                   _drawingController.deleteSelectedPolygon();
                 } else if(_drawingController.currentMode == DrawMode.circle) {
                   _drawingController.deleteSelectedCircle();
+                } else if(_drawingController.currentMode == DrawMode.rectangle) {
+                  _drawingController.deleteSelectedRectangle();
                 }
               },
               tooltip: 'Delete',
