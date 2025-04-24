@@ -56,7 +56,7 @@ class _MapDrawingScreenState extends State<MapDrawingScreen> {
             controller: _drawingController,
           ),
           Positioned(
-            bottom: 260,
+            bottom: 320,
             right: 20,
             child: FloatingActionButton(
               onPressed: () {
@@ -66,10 +66,21 @@ class _MapDrawingScreenState extends State<MapDrawingScreen> {
                   _drawingController.deleteSelectedCircle();
                 } else if(_drawingController.currentMode == DrawMode.rectangle) {
                   _drawingController.deleteSelectedRectangle();
+                } else if(_drawingController.currentMode == DrawMode.freehand) {
+                  _drawingController.deleteSelectedFreehandPolygon();
                 }
               },
               tooltip: 'Delete',
               child: const Icon(Icons.delete_forever),
+            ),
+          ),
+          Positioned(
+            bottom: 260,
+            right: 20,
+            child: FloatingActionButton(
+              onPressed: () => _drawingController.setDrawMode(DrawMode.freehand),
+              tooltip: 'Draw Freehand',
+              child: Icon(_drawingController.currentMode == DrawMode.freehand ? Icons.shape_line : Icons.shape_line_outlined),
             ),
           ),
           Positioned(

@@ -105,6 +105,7 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
   void didUpdateWidget(DrawingMapWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     _isDrawingRectangle = widget.controller.currentMode == DrawMode.rectangle;
+    _isDrawingFreeHand = widget.controller.currentMode == DrawMode.freehand;
   }
 
   @override
@@ -118,6 +119,7 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
   }
 
   void _onMapTap(LatLng position) {
+    print("_onMapTap");
     switch (widget.controller.currentMode) {
       case DrawMode.polygon:
         widget.controller.addPolygonPoint(position);
@@ -145,6 +147,10 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
         // 3. Otherwise, begin drawing
         _activeDrawingStart = position;
         widget.controller.startDrawingRectangle(position);
+        break;
+
+      case DrawMode.freehand:
+        widget.controller.selectFreehandPolygonAt(position);
         break;
 
       default:
@@ -360,26 +366,66 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
     }).toSet();
   }
 
-
+  bool _isDrawingFreeHand = false;
 
   @override
   Widget build(BuildContext context) {
+    final allPolygons = [
+      ...widget.controller.polygons.map((p) => Polygon(
+        polygonId: PolygonId(p.id),
+        points: p.points,
+        strokeColor: p.strokeColor,
+        strokeWidth: p.strokeWidth,
+        fillColor: p.fillColor,
+      )),
+      if (widget.controller.drawingFreehandPolygon != null)
+        widget.controller.drawingFreehandPolygon!,
+    ];
     return GestureDetector(
+      onPanStart: _isDrawingFreeHand ?  (details) async {
+        final box = context.findRenderObject() as RenderBox?;
+        if (box != null) {
+          final localOffset = box.globalToLocal(details.globalPosition);
+          final pixelRatio = MediaQuery.of(context).devicePixelRatio;
+          final screenCoordinate = ScreenCoordinate(
+            x: (localOffset.dx * pixelRatio).round(),
+            y: (localOffset.dy * pixelRatio).round(),
+          );
+          final latLng = await widget.controller.googleMapController!.getLatLng(screenCoordinate);
+          widget.controller.startFreehandDrawing();
+          widget.controller.addFreehandPoint(latLng);
+        }
+      } : null,
       onPanUpdate: _isDrawingRectangle && widget.controller.selectedRectangle == null ? (details) async {
         if (_activeDrawingStart != null && widget.controller.googleMapController != null) {
           // Get RenderBox from context
           final box = context.findRenderObject() as RenderBox?;
           if (box != null) {
             final localOffset = box.globalToLocal(details.globalPosition);
-            final newLatLng = await widget.controller.googleMapController!.getLatLng(
-              ScreenCoordinate(
-                x: (localOffset.dx * 2.55).round(),
-                y: (localOffset.dy * 2.55).round(),
-              ),
+            final pixelRatio = MediaQuery.of(context).devicePixelRatio;
+            final screenCoordinate = ScreenCoordinate(
+              x: (localOffset.dx * pixelRatio).round(),
+              y: (localOffset.dy * pixelRatio).round(),
             );
+            final newLatLng = await widget.controller.googleMapController!.getLatLng(screenCoordinate);
             widget.controller.updateDrawingRectangle(newLatLng);
           }
         }
+      } : (_isDrawingFreeHand ? (details) async {
+        final box = context.findRenderObject() as RenderBox?;
+        if (box != null) {
+          final localOffset = box.globalToLocal(details.globalPosition);
+          final pixelRatio = MediaQuery.of(context).devicePixelRatio;
+          final screenCoordinate = ScreenCoordinate(
+            x: (localOffset.dx * pixelRatio).round(),
+            y: (localOffset.dy * pixelRatio).round(),
+          );
+          final latLng = await widget.controller.googleMapController!.getLatLng(screenCoordinate);
+          widget.controller.addFreehandPoint(latLng);
+        }
+      } : null),
+      onPanEnd: _isDrawingFreeHand ? (details) {
+        widget.controller.finishFreehandDrawing();
       } : null,
       behavior: HitTestBehavior.translucent,
       child: GoogleMap(
@@ -395,6 +441,7 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
           ...?widget.polygons,
           ...widget.controller.mapPolygons,
           ...allRectanglePolygons,
+          ...allPolygons,
           if (drawingRectanglePolygon != null)
             drawingRectanglePolygon!,
         },

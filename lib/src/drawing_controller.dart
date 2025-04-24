@@ -11,7 +11,7 @@ import 'models/drawable_circle.dart';
 import 'models/drawable_polygon.dart';
 import 'models/drawable_polyline.dart';
 
-enum DrawMode { none, polygon, polyline, circle, rectangle }
+enum DrawMode { none, polygon, polyline, circle, rectangle, freehand }
 
 typedef OnPolygonDrawn = void Function(DrawablePolygon polygon);
 
@@ -725,7 +725,146 @@ class DrawingController extends ChangeNotifier {
         notifyListeners();
       }
     }
-
   }
 
+  /// Drawing Freehand
+
+  List<LatLng> _freehandPoints = [];
+  bool _isFreehandDrawing = false;
+
+  List<LatLng> get freehandPoints => _freehandPoints;
+  bool get isFreehandDrawing => _isFreehandDrawing;
+
+  String? _selectedFreehandPolygonId;
+
+  String? get selectedFreehandPolygonId => _selectedFreehandPolygonId;
+  DrawablePolygon? get selectedFreehandPolygon => _polygons.firstWhereOrNull((p) => p.id == _selectedFreehandPolygonId);
+  Function(String id)? onFreehandPolygonSelected;
+
+  void startFreehandDrawing() {
+    _freehandPoints.clear();
+    _isFreehandDrawing = true;
+    notifyListeners();
+  }
+
+  void addFreehandPoint(LatLng point) {
+    if (_isFreehandDrawing) {
+      _freehandPoints.add(point);
+      notifyListeners();
+    }
+  }
+
+  void finishFreehandDrawing() {
+    if (_isFreehandDrawing && _freehandPoints.length > 2) {
+      final id = 'freehand_${DateTime.now().millisecondsSinceEpoch}';
+      final polygon = DrawablePolygon(
+        id: id,
+        points: List<LatLng>.from(_freehandPoints),
+        strokeColor: _currentDrawingColor,
+        fillColor: _currentDrawingColor.withValues(alpha: 0.2),
+      );
+      _polygons.add(polygon);
+    }
+    _isFreehandDrawing = false;
+    _freehandPoints.clear();
+    notifyListeners();
+  }
+
+  Polygon? get drawingFreehandPolygon {
+    if (!_isFreehandDrawing || _freehandPoints.length < 2) return null;
+
+    return Polygon(
+      polygonId: PolygonId('freehand_drawing'),
+      points: List<LatLng>.from(_freehandPoints),
+      strokeColor: Colors.purple,
+      strokeWidth: 3,
+      fillColor: Colors.purple.withValues(alpha: 0.2),
+    );
+  }
+
+  bool _pointInPolygon(LatLng point, List<LatLng> polygon) {
+    int i, j = polygon.length - 1;
+    bool oddNodes = false;
+
+    for (i = 0; i < polygon.length; i++) {
+      if ((polygon[i].latitude < point.latitude && polygon[j].latitude >= point.latitude ||
+          polygon[j].latitude < point.latitude && polygon[i].latitude >= point.latitude) &&
+          (polygon[i].longitude <= point.longitude || polygon[j].longitude <= point.longitude)) {
+        if (polygon[i].longitude + (point.latitude - polygon[i].latitude) /
+            (polygon[j].latitude - polygon[i].latitude) *
+            (polygon[j].longitude - polygon[i].longitude) < point.longitude) {
+          oddNodes = !oddNodes;
+        }
+      }
+      j = i;
+    }
+
+    return oddNodes;
+  }
+
+
+  void selectFreehandPolygonAt(LatLng tapPosition) {
+    // First, deselect any previously selected polygon
+    if (_selectedFreehandPolygonId != null) {
+      final previousIndex = _polygons.indexWhere((p) => p.id == _selectedFreehandPolygonId);
+      if (previousIndex != -1) {
+        _polygons[previousIndex] = _polygons[previousIndex].copyWith(strokeWidth: 2);
+      }
+      _selectedFreehandPolygonId = null;
+    }
+
+    // Then try to select the new polygon
+    for (int i = 0; i < _polygons.length; i++) {
+      final polygon = _polygons[i];
+      if (_pointInPolygon(tapPosition, polygon.points)) {
+        _selectedFreehandPolygonId = polygon.id;
+
+        _polygons[i] = polygon.copyWith(strokeWidth: 4);
+
+        onFreehandPolygonSelected?.call(_selectedFreehandPolygonId!);
+
+        notifyListeners();
+        return;
+      }
+    }
+
+    // If no polygon was hit, ensure all are deselected
+    deselectFreehandPolygon();
+    notifyListeners();
+  }
+
+
+
+  void deselectFreehandPolygon() {
+    if (_selectedFreehandPolygonId != null) {
+      final index = _polygons.indexWhere((p) => p.id == _selectedFreehandPolygonId);
+      if (index != -1) {
+        _polygons[index] = _polygons[index].copyWith(strokeWidth: 2);
+      }
+    }
+    _selectedFreehandPolygonId = null;
+    notifyListeners();
+  }
+
+
+  void deleteSelectedFreehandPolygon() {
+    if (_selectedFreehandPolygonId != null) {
+      _polygons.removeWhere((p) => p.id == _selectedFreehandPolygonId);
+      _selectedFreehandPolygonId = null;
+      notifyListeners();
+    }
+  }
+
+  Set<Polygon> get mapFreeHandPolygons {
+    return _polygons.map((poly) {
+      final isSelected = poly.id == _selectedFreehandPolygonId;
+      return Polygon(
+        polygonId: PolygonId(poly.id),
+        points: poly.points,
+        strokeColor: isSelected ? Colors.blue : poly.strokeColor,
+        fillColor: isSelected ? Colors.blue.withValues(alpha: 0.2) : poly.fillColor,
+        strokeWidth: isSelected ? 4 : 2,
+      );
+    }).toSet();
+  }
 }
