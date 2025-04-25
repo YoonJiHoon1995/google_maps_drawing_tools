@@ -160,6 +160,61 @@ class DrawingController extends ChangeNotifier {
     return _calculateDistanceMeters(tap, marker) < thresholdMeters;
   }
 
+  bool _isPointInsidePolygon(LatLng point, List<LatLng> polygonPoints) {
+    int intersectCount = 0;
+
+    for (int j = 0; j < polygonPoints.length - 1; j++) {
+      LatLng a = polygonPoints[j];
+      LatLng b = polygonPoints[j + 1];
+
+      if (_rayCastIntersect(point, a, b)) {
+        intersectCount++;
+      }
+    }
+
+    return (intersectCount % 2) == 1; // Odd == inside
+  }
+
+  bool _rayCastIntersect(LatLng point, LatLng a, LatLng b) {
+    double px = point.longitude;
+    double py = point.latitude;
+    double ax = a.longitude;
+    double ay = a.latitude;
+    double bx = b.longitude;
+    double by = b.latitude;
+
+    if (ay > by) {
+      ax = b.longitude;
+      ay = b.latitude;
+      bx = a.longitude;
+      by = a.latitude;
+    }
+
+    if (py == ay || py == by) py += 0.00000001;
+
+    if ((py > by || py < ay) || (px > max(ax, bx))) return false;
+
+    if (px < min(ax, bx)) return true;
+
+    double red = (ax != bx) ? ((by - ay) / (bx - ax)) : double.infinity;
+    double blue = (ax != px) ? ((py - ay) / (px - ax)) : double.infinity;
+
+    return blue >= red;
+  }
+
+
+  bool selectPolygonAt(LatLng tapPosition) {
+    for (final polygon in _polygons) {
+      if (_isPointInsidePolygon(tapPosition, polygon.points)) {
+        selectPolygon(polygon.id);
+        return true;
+      }
+    }
+
+    deselectPolygon();
+    return false;
+  }
+
   void addPolygonPoint(LatLng point) {
     if (_currentMode != DrawMode.polygon) return;
 

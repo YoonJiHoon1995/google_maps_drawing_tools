@@ -122,7 +122,22 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
     print("_onMapTap");
     switch (widget.controller.currentMode) {
       case DrawMode.polygon:
-        widget.controller.addPolygonPoint(position);
+        if (widget.controller.currentMode == DrawMode.polygon) {
+          final isDrawing = widget.controller.activePolygonId != null;
+
+          if (isDrawing) {
+            // Currently drawing a polygon
+            widget.controller.addPolygonPoint(position);
+          } else {
+            // Try selecting an existing polygon first
+            final wasPolygonSelected = widget.controller.selectPolygonAt(position);
+
+            // If no polygon was selected, start new polygon
+            if (!wasPolygonSelected) {
+              widget.controller.addPolygonPoint(position);
+            }
+          }
+        }
         break;
 
       case DrawMode.circle:
@@ -220,14 +235,28 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
       );
     }
 
-    if(editingMarkers.length > 2) {
+    if (editingMarkers.length > 2) {
+      final markerId = editingMarkers.first.markerId;
+
       Future.delayed(Duration(milliseconds: 4000), () {
-        widget.controller.googleMapController?.showMarkerInfoWindow(editingMarkers.first.markerId);
+        if (!mounted) return;
+
+        // Try showing the InfoWindow, catching the error if it fails
+        widget.controller.googleMapController?.showMarkerInfoWindow(markerId).catchError((e) {
+          debugPrint("InfoWindow could not be shown, can be ignored");
+        });
+
         Future.delayed(Duration(milliseconds: 4000), () {
-          widget.controller.googleMapController?.hideMarkerInfoWindow(editingMarkers.first.markerId);
-        },);
-      },);
+          if (!mounted) return;
+
+          widget.controller.googleMapController?.hideMarkerInfoWindow(markerId).catchError((e) {
+            debugPrint("InfoWindow could not be hidden, can be ignored");
+          });
+        });
+      });
     }
+
+
 
     // Midpoint markers — show ONLY if polygon is selected AND drawing is finished
     final shouldShowMidpoints =
