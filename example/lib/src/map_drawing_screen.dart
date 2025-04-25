@@ -1,7 +1,8 @@
 // Inside your main screen (where you use DrawingMapWidget)
 
 import 'package:flutter/material.dart';
-import 'package:google_maps_drawing_tools/google_maps_drawing_tools.dart'; // Your package
+import 'package:google_maps_drawing_tools/google_maps_drawing_tools.dart';
+import 'package:pointer_interceptor/pointer_interceptor.dart'; // Your package
 
 class MapDrawingScreen extends StatefulWidget {
   const MapDrawingScreen({super.key});
@@ -54,71 +55,84 @@ class _MapDrawingScreenState extends State<MapDrawingScreen> {
               zoom: 14,
             ),
             controller: _drawingController,
+            webGestureHandling: WebGestureHandling.cooperative,
           ),
           Positioned(
             bottom: 320,
             right: 20,
-            child: FloatingActionButton(
-              onPressed: () {
-                if(_drawingController.currentMode == DrawMode.polygon) {
-                  _drawingController.deleteSelectedPolygon();
-                } else if(_drawingController.currentMode == DrawMode.circle) {
-                  _drawingController.deleteSelectedCircle();
-                } else if(_drawingController.currentMode == DrawMode.rectangle) {
-                  _drawingController.deleteSelectedRectangle();
-                } else if(_drawingController.currentMode == DrawMode.freehand) {
-                  _drawingController.deleteSelectedFreehandPolygon();
-                }
-              },
-              tooltip: 'Delete',
-              child: const Icon(Icons.delete_forever),
+            child: PointerInterceptor(
+              child: FloatingActionButton(
+                onPressed: () {
+                  if(_drawingController.currentMode == DrawMode.polygon) {
+                    _drawingController.deleteSelectedPolygon();
+                  } else if(_drawingController.currentMode == DrawMode.circle) {
+                    _drawingController.deleteSelectedCircle();
+                  } else if(_drawingController.currentMode == DrawMode.rectangle) {
+                    _drawingController.deleteSelectedRectangle();
+                  } else if(_drawingController.currentMode == DrawMode.freehand) {
+                    _drawingController.deleteSelectedFreehandPolygon();
+                  }
+                },
+                tooltip: 'Delete',
+                child: const Icon(Icons.delete_forever),
+              ),
             ),
           ),
           Positioned(
             bottom: 260,
             right: 20,
-            child: FloatingActionButton(
-              onPressed: () => _drawingController.setDrawMode(DrawMode.freehand),
-              tooltip: 'Draw Freehand',
-              child: Icon(_drawingController.currentMode == DrawMode.freehand ? Icons.shape_line : Icons.shape_line_outlined),
+            child: PointerInterceptor(
+              child: FloatingActionButton(
+                onPressed: () => _drawingController.setDrawMode(DrawMode.freehand),
+                tooltip: 'Draw Freehand',
+                child: Icon(_drawingController.currentMode == DrawMode.freehand ? Icons.shape_line : Icons.shape_line_outlined),
+              ),
             ),
           ),
           Positioned(
             bottom: 200,
             right: 20,
-            child: FloatingActionButton(
-              onPressed: () => _drawingController.setDrawMode(DrawMode.polygon),
-              tooltip: 'Draw Polygon',
-              child: Icon(_drawingController.currentMode == DrawMode.polygon ? Icons.pentagon : Icons.pentagon_outlined),
+            child: PointerInterceptor(
+              child: FloatingActionButton(
+                onPressed: () => _drawingController.setDrawMode(DrawMode.polygon),
+                tooltip: 'Draw Polygon',
+                child: Icon(_drawingController.currentMode == DrawMode.polygon ? Icons.pentagon : Icons.pentagon_outlined),
+              ),
             ),
           ),
           Positioned(
             bottom: 140,
             right: 20,
-            child: FloatingActionButton(
-              onPressed: () => _drawingController.setDrawMode(DrawMode.rectangle),
-              tooltip: 'Draw Rectangle',
-              child: Icon(_drawingController.currentMode == DrawMode.rectangle ? Icons.rectangle : Icons.rectangle_outlined),
+            child: PointerInterceptor(
+              child: FloatingActionButton(
+                onPressed: () => _drawingController.setDrawMode(DrawMode.rectangle),
+                tooltip: 'Draw Rectangle',
+                child: Icon(_drawingController.currentMode == DrawMode.rectangle ? Icons.rectangle : Icons.rectangle_outlined),
+              ),
             ),
           ),
           Positioned(
             bottom: 80,
             right: 20,
-            child: FloatingActionButton(
-              onPressed: () => _drawingController.setDrawMode(DrawMode.circle),
-              tooltip: 'Draw Circle',
-              child: Icon(_drawingController.currentMode == DrawMode.circle ? Icons.circle : Icons.circle_outlined),
+            child: PointerInterceptor(
+              child: FloatingActionButton(
+                onPressed: () => _drawingController.setDrawMode(DrawMode.circle),
+                tooltip: 'Draw Circle',
+                child: Icon(_drawingController.currentMode == DrawMode.circle ? Icons.circle : Icons.circle_outlined),
+              ),
             ),
           ),
           Positioned(
             bottom: 20,
             right: 20,
-            child: FloatingActionButton(
-              onPressed: () {
-                _drawingController.setDrawMode(DrawMode.none);
-              },
-              tooltip: 'Finish Shape',
-              child: const Icon(Icons.check),
+            child: PointerInterceptor(
+              child: FloatingActionButton(
+                onPressed: () {
+                  _drawingController.setDrawMode(DrawMode.none);
+                },
+                tooltip: 'Finish Shape',
+                child: const Icon(Icons.check),
+              ),
             ),
           ),
         ],

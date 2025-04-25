@@ -36,6 +36,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   google_maps_drawing_tools:
     path: ../
+  pointer_interceptor: ^0.10.1+2
 
 dev_dependencies:
   flutter_test:

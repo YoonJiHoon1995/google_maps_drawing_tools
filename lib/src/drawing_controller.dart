@@ -102,35 +102,68 @@ class DrawingController extends ChangeNotifier {
       if (index == -1) return;
 
       final oldPolygon = _polygons[index];
-      final updatedPolygon = oldPolygon.copyWith(strokeColor: newColor, fillColor: newColor.withValues(alpha: 0.2));
+      final updatedPolygon = oldPolygon.copyWith(
+        strokeColor: newColor,
+        fillColor: newColor.withValues(alpha: 0.2),
+      );
 
       _polygons[index] = updatedPolygon;
 
       if (_selectedPolygon?.id == id) {
         _selectedPolygon = updatedPolygon;
       }
+
       onPolygonUpdated?.call(updatedPolygon);
+
     } else if (currentMode == DrawMode.circle) {
       final index = _drawableCircles.indexWhere((c) => c.id == id);
       if (index == -1) return;
 
       final oldCircle = _drawableCircles[index];
-      final updatedCircle = oldCircle.copyWith(strokeColor: newColor, fillColor: newColor.withValues(alpha: 0.2));
+      final updatedCircle = oldCircle.copyWith(
+        strokeColor: newColor,
+        fillColor: newColor.withValues(alpha: 0.2),
+      );
 
       _drawableCircles[index] = updatedCircle;
 
       if (_selectedCircleId == id) {
         _selectedCircleId = updatedCircle.id;
       }
+
       onCircleUpdated?.call(updatedCircle);
+
+    } else if (currentMode == DrawMode.rectangle) {
+      final index = _rectangles.indexWhere((r) => r.id == id);
+      if (index == -1) return;
+
+      final oldRectangle = _rectangles[index];
+      final updatedRectangle = oldRectangle.copyWith(
+        strokeColor: newColor,
+        fillColor: newColor.withValues(alpha: 0.2),
+      );
+
+      _rectangles[index] = updatedRectangle;
+
+      if (_selectedRectangleId == id) {
+        _selectedRectangleId = updatedRectangle.id;
+      }
+
+      onRectangleUpdated?.call(updatedRectangle); // Optional: you can add a rectangle update callback
     }
 
     notifyListeners();
   }
 
+
   void setDrawMode(DrawMode mode) {
     finishPolygon();
     finishDrawingRectangle();
+    finishFreehandDrawing();
+    deselectCircle();
+    deselectPolygon();
+    deselectRectangle();
+    deleteSelectedFreehandPolygon();
     _currentMode = mode;
     _activePolygon = null;
     _selectedPolygon = null;
@@ -589,12 +622,19 @@ class DrawingController extends ChangeNotifier {
 
   List<DrawableRectangle> _rectangles = [];
   DrawableRectangle? _drawingRectangle;
+  DrawableRectangle? _selectedRectangle;
 
   List<DrawableRectangle> get rectangles => _rectangles;
   DrawableRectangle? get drawingRectangle => _drawingRectangle;
+  DrawableRectangle? get selectedRectangle => _selectedRectangle;
   String? _selectedRectangleId;
+  bool _rectangleStarted = false;
+  bool get rectangleStarted => _rectangleStarted;
   String? get selectedRectangleId => _selectedRectangleId;
   void Function(String rectangleId)? onRectangleSelected;
+  void Function(DrawableRectangle updated)? onRectangleUpdated;
+  void Function(List<DrawableRectangle> finished)? onDrawRectangleFinished;
+  void Function(String rectangleId)? onDeleteRectangle;
   late BitmapDescriptor rectangleStartMarkerIcon;
   Marker? _rectangleStartMarker;
   Marker? get rectangleStartMarker => _rectangleStartMarker;
@@ -608,7 +648,7 @@ class DrawingController extends ChangeNotifier {
   void startDrawingRectangle(LatLng start) {
     final id = 'rectangle_${DateTime.now().millisecondsSinceEpoch}';
     final bounds = LatLngBounds(southwest: start, northeast: start);
-
+    _rectangleStarted = true;
     _drawingRectangle = DrawableRectangle(id: id, bounds: bounds, anchor: start, fillColor: _currentDrawingColor.withValues(alpha: 0.2), strokeColor: _currentDrawingColor);
     _rectangleStartMarker = Marker(
       markerId: MarkerId('rectangle_start_$id'),
@@ -635,7 +675,7 @@ class DrawingController extends ChangeNotifier {
     _drawingRectangle = _drawingRectangle!.copyWith(
       bounds: LatLngBounds(southwest: sw, northeast: ne),
     );
-
+    onRectangleUpdated?.call(_drawingRectangle!);
     notifyListeners();
   }
 
@@ -644,46 +684,25 @@ class DrawingController extends ChangeNotifier {
       _rectangles.add(_drawingRectangle!);
       _drawingRectangle = null;
       _rectangleStartMarker = null;
+      onDrawRectangleFinished?.call(_rectangles);
+      _rectangleStarted = false;
       notifyListeners();
     }
   }
 
-  bool selectRectangleAt(LatLng tapPosition) {
-    for (final rect in _rectangles) {
-      final sw = LatLng(
-        min(rect.bounds.southwest.latitude, rect.bounds.northeast.latitude),
-        min(rect.bounds.southwest.longitude, rect.bounds.northeast.longitude),
-      );
-      final ne = LatLng(
-        max(rect.bounds.southwest.latitude, rect.bounds.northeast.latitude),
-        max(rect.bounds.southwest.longitude, rect.bounds.northeast.longitude),
-      );
-
-      // Add a tolerance threshold to ensure you select the rectangle when tapping near the boundary
-      const threshold = 0.0001; // You can adjust this threshold based on zoom level
-
-      if (tapPosition.latitude >= (sw.latitude - threshold) &&
-          tapPosition.latitude <= (ne.latitude + threshold) &&
-          tapPosition.longitude >= (sw.longitude - threshold) &&
-          tapPosition.longitude <= (ne.longitude + threshold)) {
-        _selectedRectangleId = rect.id;
-        print('Selected rectangle ID: ${rect.id}');
-        notifyListeners();
-        onRectangleSelected?.call(rect.id); // <-- fire callback
-        return true;
-      }
+  void selectRectangle(String id) {
+    if(currentMode != DrawMode.rectangle) {
+      return;
     }
-
-    _selectedRectangleId = null;
-    return false;
+    debugPrint("OnTapRectangle");
+    _selectedRectangleId = id;
+    _selectedRectangle = _rectangles.firstWhereOrNull((p) => p.id == id);
+    notifyListeners();
+    if (_selectedRectangle != null) {
+      debugPrint("Selected Rectangle: ${_selectedRectangle!.id}");
+      onRectangleSelected?.call(_selectedRectangle!.id);
+    }
   }
-
-
-  DrawableRectangle? get selectedRectangle {
-    if (_selectedRectangleId == null) return null;
-    return _rectangles.firstWhereOrNull((r) => r.id == _selectedRectangleId);
-  }
-
 
   void deselectRectangle() {
     if (_selectedRectangleId != null) {
@@ -695,6 +714,7 @@ class DrawingController extends ChangeNotifier {
   void deleteSelectedRectangle() {
     if (_selectedRectangleId != null) {
       _rectangles.removeWhere((r) => r.id == _selectedRectangleId);
+      onDeleteRectangle?.call(_selectedRectangleId!);
       _selectedRectangleId = null;
       notifyListeners();
     }
@@ -732,6 +752,9 @@ class DrawingController extends ChangeNotifier {
       onDragStart: (currentPos) {
         this.currentPos = currentPos;
       },
+      onDrag: (updatedPos) {
+        _updateRectangleCorner(cornerId, updatedPos);
+      },
       onDragEnd: (newPos) {
         _updateRectangleCorner(cornerId, newPos);
       },
@@ -763,6 +786,7 @@ class DrawingController extends ChangeNotifier {
     }
 
     try {
+      debugPrint("Reached here in try");
       final updated = rect.copyWith(
         bounds: LatLngBounds(southwest: sw, northeast: ne),
       );
@@ -770,9 +794,13 @@ class DrawingController extends ChangeNotifier {
       final index = _rectangles.indexWhere((r) => r.id == rect.id);
       if (index != -1) {
         _rectangles[index] = updated;
+        _selectedRectangle = updated;
         notifyListeners();
+        debugPrint("Try updated rectangle");
       }
+      debugPrint("Executed try");
     } catch(e) {
+      debugPrint("Reached here in catch");
       int index = _rectangleEditHandles?.indexWhere((element) => element.markerId.value == 'handle_$cornerId',) ?? -1;
       if(index >= 0) {
         Marker cornerMarker = _rectangleEditHandles![index];
@@ -786,15 +814,22 @@ class DrawingController extends ChangeNotifier {
 
   List<LatLng> _freehandPoints = [];
   bool _isFreehandDrawing = false;
-
+  final List<DrawablePolygon> _freehandPolygons = [];
   List<LatLng> get freehandPoints => _freehandPoints;
   bool get isFreehandDrawing => _isFreehandDrawing;
 
   String? _selectedFreehandPolygonId;
-
+  List<DrawablePolygon> get freehandPolygons => List.unmodifiable(_freehandPolygons);
+  DrawablePolygon? _selectedFreehandPolygon;
+  DrawablePolygon? get selectedFreehandPolygon => _selectedFreehandPolygon;
   String? get selectedFreehandPolygonId => _selectedFreehandPolygonId;
-  DrawablePolygon? get selectedFreehandPolygon => _polygons.firstWhereOrNull((p) => p.id == _selectedFreehandPolygonId);
-  Function(String id)? onFreehandPolygonSelected;
+
+  void Function(List<DrawablePolygon> allPolygons)? onFreehandPolygonDrawn;
+  void Function(String id)? onFreehandPolygonSelected;
+  void Function(String deletedPolygonId)? onFreehandPolygonDeleted;
+
+  bool onPanStarted = false;
+  bool onPanEnded = false;
 
   void startFreehandDrawing() {
     _freehandPoints.clear();
@@ -818,11 +853,13 @@ class DrawingController extends ChangeNotifier {
         strokeColor: _currentDrawingColor,
         fillColor: _currentDrawingColor.withValues(alpha: 0.2),
       );
-      _polygons.add(polygon);
+      _freehandPolygons.add(polygon);
     }
     _isFreehandDrawing = false;
     _freehandPoints.clear();
+    deselectFreehandPolygon();
     notifyListeners();
+    onFreehandPolygonDrawn?.call(_freehandPolygons);
   }
 
   Polygon? get drawingFreehandPolygon {
@@ -837,64 +874,25 @@ class DrawingController extends ChangeNotifier {
     );
   }
 
-  bool _pointInPolygon(LatLng point, List<LatLng> polygon) {
-    int i, j = polygon.length - 1;
-    bool oddNodes = false;
-
-    for (i = 0; i < polygon.length; i++) {
-      if ((polygon[i].latitude < point.latitude && polygon[j].latitude >= point.latitude ||
-          polygon[j].latitude < point.latitude && polygon[i].latitude >= point.latitude) &&
-          (polygon[i].longitude <= point.longitude || polygon[j].longitude <= point.longitude)) {
-        if (polygon[i].longitude + (point.latitude - polygon[i].latitude) /
-            (polygon[j].latitude - polygon[i].latitude) *
-            (polygon[j].longitude - polygon[i].longitude) < point.longitude) {
-          oddNodes = !oddNodes;
-        }
-      }
-      j = i;
+  void selectFreehandPolygon(String id) {
+    if(currentMode != DrawMode.freehand) {
+      return;
     }
-
-    return oddNodes;
-  }
-
-
-  void selectFreehandPolygonAt(LatLng tapPosition) {
-    // First, deselect any previously selected polygon
-    if (_selectedFreehandPolygonId != null) {
-      final previousIndex = _polygons.indexWhere((p) => p.id == _selectedFreehandPolygonId);
-      if (previousIndex != -1) {
-        _polygons[previousIndex] = _polygons[previousIndex].copyWith(strokeWidth: 2);
-      }
-      _selectedFreehandPolygonId = null;
-    }
-
-    // Then try to select the new polygon
-    for (int i = 0; i < _polygons.length; i++) {
-      final polygon = _polygons[i];
-      if (_pointInPolygon(tapPosition, polygon.points)) {
-        _selectedFreehandPolygonId = polygon.id;
-
-        _polygons[i] = polygon.copyWith(strokeWidth: 4);
-
-        onFreehandPolygonSelected?.call(_selectedFreehandPolygonId!);
-
-        notifyListeners();
-        return;
-      }
-    }
-
-    // If no polygon was hit, ensure all are deselected
-    deselectFreehandPolygon();
+    debugPrint("OnTapRectangle");
+    _selectedFreehandPolygonId = id;
+    _selectedFreehandPolygon = _freehandPolygons.firstWhereOrNull((p) => p.id == id);
     notifyListeners();
+    if (_selectedFreehandPolygon != null) {
+      debugPrint("Selected Rectangle: ${_selectedFreehandPolygon!.id}");
+      onFreehandPolygonSelected?.call(_selectedFreehandPolygon!.id);
+    }
   }
-
-
 
   void deselectFreehandPolygon() {
     if (_selectedFreehandPolygonId != null) {
-      final index = _polygons.indexWhere((p) => p.id == _selectedFreehandPolygonId);
+      final index = _freehandPolygons.indexWhere((p) => p.id == _selectedFreehandPolygonId);
       if (index != -1) {
-        _polygons[index] = _polygons[index].copyWith(strokeWidth: 2);
+        _freehandPolygons[index] = _freehandPolygons[index].copyWith(strokeWidth: 2);
       }
     }
     _selectedFreehandPolygonId = null;
@@ -904,14 +902,15 @@ class DrawingController extends ChangeNotifier {
 
   void deleteSelectedFreehandPolygon() {
     if (_selectedFreehandPolygonId != null) {
-      _polygons.removeWhere((p) => p.id == _selectedFreehandPolygonId);
+      _freehandPolygons.removeWhere((p) => p.id == _selectedFreehandPolygonId);
+      onFreehandPolygonDeleted?.call(_selectedFreehandPolygonId!);
       _selectedFreehandPolygonId = null;
       notifyListeners();
     }
   }
 
   Set<Polygon> get mapFreeHandPolygons {
-    return _polygons.map((poly) {
+    return _freehandPolygons.map((poly) {
       final isSelected = poly.id == _selectedFreehandPolygonId;
       return Polygon(
         polygonId: PolygonId(poly.id),
@@ -919,6 +918,8 @@ class DrawingController extends ChangeNotifier {
         strokeColor: isSelected ? Colors.blue : poly.strokeColor,
         fillColor: isSelected ? Colors.blue.withValues(alpha: 0.2) : poly.fillColor,
         strokeWidth: isSelected ? 4 : 2,
+        consumeTapEvents: true,
+        onTap: () => selectFreehandPolygon(poly.id),
       );
     }).toSet();
   }

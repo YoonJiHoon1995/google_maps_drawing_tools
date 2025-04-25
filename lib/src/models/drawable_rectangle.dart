@@ -10,6 +10,9 @@ class DrawableRectangle {
   final bool isSelected;
   final bool editable;
   final LatLng anchor;
+  final int zIndex;
+  final bool visible;
+  final Map<String, dynamic>? metadata;
 
   DrawableRectangle({
     required this.id,
@@ -20,6 +23,9 @@ class DrawableRectangle {
     this.strokeWidth = 2,
     this.isSelected = false,
     this.editable = true,
+    this.zIndex = 0,
+    this.visible = true,
+    this.metadata,
   });
 
   List<LatLng> get cornerPoints => [
@@ -29,13 +35,19 @@ class DrawableRectangle {
     LatLng(bounds.northeast.latitude, bounds.southwest.longitude),
   ];
 
-  Polygon toPolygon() {
+  Polygon toPolygon({
+    void Function(LatLng position, String polygonId)? onTap,
+  }) {
     return Polygon(
       polygonId: PolygonId(id),
       points: cornerPoints + [cornerPoints.first], // close the loop
       strokeColor: strokeColor,
       fillColor: fillColor,
       strokeWidth: strokeWidth,
+      consumeTapEvents: onTap != null,
+      zIndex: zIndex,
+      visible: visible,
+      onTap: onTap != null ? () => onTap(cornerPoints.first, id) : null,
     );
   }
 
@@ -47,6 +59,9 @@ class DrawableRectangle {
     bool? editable,
     LatLng? anchor,
     bool? isSelected,
+    int? zIndex,
+    bool? visible,
+    Map<String, dynamic>? metadata,
   }) {
     return DrawableRectangle(
       id: id,
@@ -57,6 +72,9 @@ class DrawableRectangle {
       isSelected: isSelected ?? this.isSelected,
       editable: editable ?? this.editable,
       anchor: anchor ?? this.anchor,
+      zIndex: zIndex ?? this.zIndex,
+      visible: visible ?? this.visible,
+      metadata: metadata ?? this.metadata,
     );
   }
 
