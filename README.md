@@ -1,96 +1,129 @@
-🗺️ google_maps_drawing_tools
-A powerful Flutter package that adds advanced drawing tools to Google Maps for Flutter. Supports polygon drawing, editing, and snapping with a smooth and customizable UX — perfect for geofencing, region selection, and map-based user interaction features.
+# 🗺️ google_maps_drawing_tools
 
-🚀 Features
-✏️ Draw polygons interactively on the map
+A powerful Flutter package that brings advanced drawing tools to Google Maps.  
+With support for polygons, rectangles, and circles, it enables interactive drawing, editing, and customization directly on the map.  
+Ideal for applications involving geofencing, region selection, and spatial data visualization.
 
-🛠️ Edit existing polygons with draggable vertices
+---
 
-🧲 Smart snapping logic for aligning nearby vertices
+## ✨ Features
 
-🎨 Customizable polygon styles (color, stroke, fill)
+- **Interactive Drawing**: Draw polygons, rectangles, and circles directly on the map with intuitive gestures.
+- **Editing Capabilities**: Modify shapes by dragging vertices or edges.
+- **Customizable Styles**: Adjust stroke and fill colors, opacity, and other styling options.
+- **Selection & Deletion**: Tap to select shapes and remove them as needed.
+- **Event Callbacks**: Hook into drawing and editing events for custom behaviors.
+- **Modular Architecture**: Clean codebase designed for easy integration and extension.
 
-💥 Clean and modular architecture — easy to integrate
+---
 
-📱 Built for Flutter Google Maps (google_maps_flutter)
+## 📦 Installation
 
-📸 Screenshots
-Add your GIF or images here — showing polygon drawing, editing, and snapping in action.
+Add the package to your `pubspec.yaml`:
 
-📦 Installation
-Add the package to your pubspec.yaml:
-
-yaml
-Copy
-Edit
+```yaml
 dependencies:
-google_maps_drawing_tools: ^0.0.1
-Then run:
+  google_maps_drawing_tools:
+    git:
+      url: https://github.com/ExploreAritra/google_maps_drawing_tools.git
+      ref: dev
+```
 
-bash
-Copy
-Edit
+Then, run:
+
+```bash
 flutter pub get
-🛠️ Usage
-1. Initialize the controller
-   dart
-   Copy
-   Edit
-   GoogleMapDrawingController drawingController = GoogleMapDrawingController();
-2. Wrap your GoogleMap widget
-   dart
-   Copy
-   Edit
-   GoogleMapDrawingTools(
-   controller: drawingController,
-   child: GoogleMap(
-   initialCameraPosition: CameraPosition(
-   target: LatLng(37.42796133580664, -122.085749655962),
-   zoom: 14.4746,
-   ),
-   onMapCreated: (controller) {
-   drawingController.setMapController(controller);
-   },
-   ),
-   )
-3. Start drawing
-   dart
-   Copy
-   Edit
-   drawingController.startPolygonDrawing();
-4. Stop drawing
-   dart
-   Copy
-   Edit
-   drawingController.stopDrawing();
-5. Get the drawn polygon
-   dart
-   Copy
-   Edit
-   List<LatLng> polygonPoints = drawingController.getCurrentPolygonPoints();
-6. Edit polygon
-   dart
-   Copy
-   Edit
-   drawingController.enablePolygonEditing();
-7. Snap settings (optional)
-   dart
-   Copy
-   Edit
-   drawingController.setSnappingEnabled(true);
-   drawingController.setSnapThreshold(20.0); // pixels
-   🧪 Example
-   Check out the example app for a full working demo.
+```
 
-🧱 Architecture
-🔁 Controller-based design for better state management
+---
 
-✨ Separation of drawing logic, snapping, and editing
+## 🛠️ Usage
 
-🧩 Clean integration with google_maps_flutter
+### 1. Initialize the Drawing Controller
 
-🧑‍💻 Contributing
-Pull requests are welcome! If you find a bug or want a feature, feel free to open an issue.
+```dart
+final drawingController = DrawingController();
+```
 
-📜 License
-MIT License. See the LICENSE file for details.
+### 2. Integrate with GoogleMap Widget
+
+```dart
+GoogleMap(
+  onMapCreated: (GoogleMapController controller) {
+    drawingController.setMapController(controller);
+  },
+  markers: drawingController.markers,
+  polygons: drawingController.polygons,
+  circles: drawingController.circles,
+  onTap: drawingController.onMapTap,
+  onLongPress: drawingController.onMapLongPress,
+  // ... other map properties
+)
+```
+
+### 3. Start Drawing
+
+```dart
+// To start drawing a polygon
+drawingController.startDrawing(DrawMode.polygon);
+
+// To start drawing a rectangle
+drawingController.startDrawing(DrawMode.rectangle);
+
+// To start drawing a circle
+drawingController.startDrawing(DrawMode.circle);
+```
+
+### 4. Finish Drawing
+
+```dart
+drawingController.finishDrawing();
+```
+
+### 5. Update Shape Color
+
+```dart
+drawingController.updateColor(shapeId, newColor);
+```
+
+### 6. Delete a Shape
+
+```dart
+drawingController.deleteShape(shapeId);
+```
+
+---
+
+## 📸 Screenshots
+
+*Add screenshots or GIFs here to showcase drawing and editing functionalities.*
+
+---
+
+## 🧪 Example
+
+An example application demonstrating the package's capabilities is available in the `example/` directory.
+
+To run it:
+
+```bash
+cd example
+flutter run
+```
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License. See the [LICENSE](https://github.com/ExploreAritra/google_maps_drawing_tools/blob/dev/LICENSE) file for details.
+
+---
+
+## 🙌 Contributions
+
+Contributions are welcome!  
+Feel free to submit issues or pull requests to enhance the package.
+
+---
+
+For more details and updates, visit the [google_maps_drawing_tools GitHub repository](https://github.com/ExploreAritra/google_maps_drawing_tools/tree/dev).
