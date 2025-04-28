@@ -96,7 +96,11 @@ drawingController.deleteShape(shapeId);
 
 ## 📸 Screenshots
 
-*Add screenshots or GIFs here to showcase drawing and editing functionalities.*
+![Drawing Circle](screenshots/image_1.png)
+![Drawing Rectangle](screenshots/image_2.png)
+![Drawing Polygon](screenshots/image_3.png)
+![Drawing Freehand](screenshots/image_4.png)
+![Drawing Usage](screenshots/usage.gif)
 
 ---
 

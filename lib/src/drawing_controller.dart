@@ -707,6 +707,7 @@ class DrawingController extends ChangeNotifier {
   void deselectRectangle() {
     if (_selectedRectangleId != null) {
       _selectedRectangleId = null;
+      _selectedRectangle = null;
       notifyListeners();
     }
   }
