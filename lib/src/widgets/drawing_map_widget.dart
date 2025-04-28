@@ -1,5 +1,7 @@
 // File: lib/src/widgets/drawing_map_widget.dart
 
+import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -486,7 +488,10 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
               final box = context.findRenderObject() as RenderBox?;
               if (box != null) {
                 final localOffset = box.globalToLocal(details.globalPosition);
-                final pixelRatio = MediaQuery.of(context).devicePixelRatio;
+                double pixelRatio = MediaQuery.of(context).devicePixelRatio;
+                if(!kIsWeb && Platform.isIOS) {
+                  pixelRatio = 1;
+                }
                 final screenCoordinate = ScreenCoordinate(
                   x: (localOffset.dx * pixelRatio).round(),
                   y: (localOffset.dy * pixelRatio).round(),
@@ -502,7 +507,10 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
                 final box = context.findRenderObject() as RenderBox?;
                 if (box != null) {
                   final localOffset = box.globalToLocal(details.globalPosition);
-                  final pixelRatio = MediaQuery.of(context).devicePixelRatio;
+                  double pixelRatio = MediaQuery.of(context).devicePixelRatio;
+                  if(!kIsWeb && Platform.isIOS) {
+                    pixelRatio = 1;
+                  }
                   final screenCoordinate = ScreenCoordinate(
                     x: (localOffset.dx * pixelRatio).round(),
                     y: (localOffset.dy * pixelRatio).round(),
@@ -515,7 +523,10 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
               final box = context.findRenderObject() as RenderBox?;
               if (box != null) {
                 final localOffset = box.globalToLocal(details.globalPosition);
-                final pixelRatio = MediaQuery.of(context).devicePixelRatio;
+                double pixelRatio = MediaQuery.of(context).devicePixelRatio;
+                if(!kIsWeb && Platform.isIOS) {
+                  pixelRatio = 1;
+                }
                 final screenCoordinate = ScreenCoordinate(
                   x: (localOffset.dx * pixelRatio).round(),
                   y: (localOffset.dy * pixelRatio).round(),
