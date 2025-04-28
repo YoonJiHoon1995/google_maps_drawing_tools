@@ -23,10 +23,7 @@ Add the package to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  google_maps_drawing_tools:
-    git:
-      url: https://github.com/ExploreAritra/google_maps_drawing_tools.git
-      ref: dev
+  google_maps_drawing_tools: ^0.0.1
 ```
 
 Then, run:
@@ -34,6 +31,9 @@ Then, run:
 ```bash
 flutter pub get
 ```
+### Setup Requirement
+
+Before using this package, make sure you have set up [`google_maps_flutter`](https://pub.dev/packages/google_maps_flutter) correctly by following its official instructions.
 
 ---
 
@@ -48,16 +48,14 @@ final drawingController = DrawingController();
 ### 2. Integrate with GoogleMap Widget
 
 ```dart
-GoogleMap(
-  onMapCreated: (GoogleMapController controller) {
-    drawingController.setMapController(controller);
-  },
-  markers: drawingController.markers,
-  polygons: drawingController.polygons,
-  circles: drawingController.circles,
-  onTap: drawingController.onMapTap,
-  onLongPress: drawingController.onMapLongPress,
-  // ... other map properties
+DrawingMapWidget(
+  initialCameraPosition: CameraPosition(
+    target: LatLng(37.7749, -122.4194),
+    zoom: 14,
+  ),
+  controller: drawingController,
+  webGestureHandling: WebGestureHandling.cooperative,
+// ... other Google map properties
 )
 ```
 
