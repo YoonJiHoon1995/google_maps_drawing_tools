@@ -716,6 +716,7 @@ class DrawingController extends ChangeNotifier {
       _rectangles.removeWhere((r) => r.id == _selectedRectangleId);
       onDeleteRectangle?.call(_selectedRectangleId!);
       _selectedRectangleId = null;
+      _selectedRectangle = null;
       notifyListeners();
     }
   }
