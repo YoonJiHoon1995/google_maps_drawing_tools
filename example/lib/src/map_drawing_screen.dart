@@ -43,19 +43,22 @@ class _MapDrawingScreenState extends State<MapDrawingScreen> {
     };
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
           DrawingMapWidget(
-            initialCameraPosition: CameraPosition(
-              target: LatLng(37.7749, -122.4194),
-              zoom: 14,
-            ),
+            initialCameraPosition: CameraPosition(target: LatLng(37.7749, -122.4194), zoom: 14),
             controller: _drawingController,
             webGestureHandling: WebGestureHandling.cooperative,
+          ),
+          Positioned(
+            top: 20,
+            left: 20,
+            child: PointerInterceptor(
+              child: FloatingActionButton(onPressed: () => print(_drawingController.geoJsonFromDrawableShapes()), tooltip: 'Export as GeoJSON', child: Icon(Icons.exit_to_app)),
+            ),
           ),
           Positioned(
             bottom: 320,
@@ -63,13 +66,13 @@ class _MapDrawingScreenState extends State<MapDrawingScreen> {
             child: PointerInterceptor(
               child: FloatingActionButton(
                 onPressed: () {
-                  if(_drawingController.currentMode == DrawMode.polygon) {
+                  if (_drawingController.currentMode == DrawMode.polygon) {
                     _drawingController.deleteSelectedPolygon();
-                  } else if(_drawingController.currentMode == DrawMode.circle) {
+                  } else if (_drawingController.currentMode == DrawMode.circle) {
                     _drawingController.deleteSelectedCircle();
-                  } else if(_drawingController.currentMode == DrawMode.rectangle) {
+                  } else if (_drawingController.currentMode == DrawMode.rectangle) {
                     _drawingController.deleteSelectedRectangle();
-                  } else if(_drawingController.currentMode == DrawMode.freehand) {
+                  } else if (_drawingController.currentMode == DrawMode.freehand) {
                     _drawingController.deleteSelectedFreehandPolygon();
                   }
                 },

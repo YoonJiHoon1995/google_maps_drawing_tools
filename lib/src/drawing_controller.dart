@@ -10,6 +10,7 @@ import 'package:collection/collection.dart';
 import 'models/drawable_circle.dart';
 import 'models/drawable_polygon.dart';
 import 'models/drawable_polyline.dart';
+import 'models/drawable_shape_bundle.dart';
 
 enum DrawMode { none, polygon, polyline, circle, rectangle, freehand }
 
@@ -114,7 +115,6 @@ class DrawingController extends ChangeNotifier {
       }
 
       onPolygonUpdated?.call(updatedPolygon);
-
     } else if (currentMode == DrawMode.circle) {
       final index = _drawableCircles.indexWhere((c) => c.id == id);
       if (index == -1) return;
@@ -132,7 +132,6 @@ class DrawingController extends ChangeNotifier {
       }
 
       onCircleUpdated?.call(updatedCircle);
-
     } else if (currentMode == DrawMode.rectangle) {
       final index = _rectangles.indexWhere((r) => r.id == id);
       if (index == -1) return;
@@ -154,7 +153,6 @@ class DrawingController extends ChangeNotifier {
 
     notifyListeners();
   }
-
 
   void setDrawMode(DrawMode mode) {
     finishPolygon();
@@ -235,7 +233,6 @@ class DrawingController extends ChangeNotifier {
     return blue >= red;
   }
 
-
   bool selectPolygonAt(LatLng tapPosition) {
     for (final polygon in _polygons) {
       if (_isPointInsidePolygon(tapPosition, polygon.points)) {
@@ -309,8 +306,8 @@ class DrawingController extends ChangeNotifier {
     return threshold < 1.0
         ? 1.0
         : threshold > 300.0
-        ? 300.0
-        : threshold;
+            ? 300.0
+            : threshold;
   }
 
   bool isNearPoint(LatLng p1, LatLng p2, double zoom) {
@@ -596,7 +593,6 @@ class DrawingController extends ChangeNotifier {
     onCircleUpdated?.call(updated);
   }
 
-
   /// Place handle due east of center at current radius
   LatLng computeRadiusHandle(LatLng center, double radiusMeters) {
     const double earthRadius = 6371000; // in meters
@@ -616,7 +612,6 @@ class DrawingController extends ChangeNotifier {
       }
     }
   }
-
 
   /// Draw Rectangle Logic
 
@@ -643,7 +638,6 @@ class DrawingController extends ChangeNotifier {
     rectangleStartMarkerIcon = icon;
     notifyListeners();
   }
-
 
   void startDrawingRectangle(LatLng start) {
     final id = 'rectangle_${DateTime.now().millisecondsSinceEpoch}';
@@ -691,7 +685,7 @@ class DrawingController extends ChangeNotifier {
   }
 
   void selectRectangle(String id) {
-    if(currentMode != DrawMode.rectangle) {
+    if (currentMode != DrawMode.rectangle) {
       return;
     }
     debugPrint("OnTapRectangle");
@@ -801,10 +795,13 @@ class DrawingController extends ChangeNotifier {
         debugPrint("Try updated rectangle");
       }
       debugPrint("Executed try");
-    } catch(e) {
+    } catch (e) {
       debugPrint("Reached here in catch");
-      int index = _rectangleEditHandles?.indexWhere((element) => element.markerId.value == 'handle_$cornerId',) ?? -1;
-      if(index >= 0) {
+      int index = _rectangleEditHandles?.indexWhere(
+            (element) => element.markerId.value == 'handle_$cornerId',
+          ) ??
+          -1;
+      if (index >= 0) {
         Marker cornerMarker = _rectangleEditHandles![index];
         _rectangleEditHandles![index] = cornerMarker.copyWith(positionParam: currentPos);
         notifyListeners();
@@ -877,7 +874,7 @@ class DrawingController extends ChangeNotifier {
   }
 
   void selectFreehandPolygon(String id) {
-    if(currentMode != DrawMode.freehand) {
+    if (currentMode != DrawMode.freehand) {
       return;
     }
     debugPrint("OnTapRectangle");
@@ -901,7 +898,6 @@ class DrawingController extends ChangeNotifier {
     notifyListeners();
   }
 
-
   void deleteSelectedFreehandPolygon() {
     if (_selectedFreehandPolygonId != null) {
       _freehandPolygons.removeWhere((p) => p.id == _selectedFreehandPolygonId);
@@ -924,5 +920,20 @@ class DrawingController extends ChangeNotifier {
         onTap: () => selectFreehandPolygon(poly.id),
       );
     }).toSet();
+  }
+
+  drawShapesFromGeoJson(Map<String, dynamic> geoJson) {
+    final shapesBundle = drawableShapesFromGeoJson(geoJson);
+    _polygons.addAll(shapesBundle.polygons);
+    _rectangles.addAll(shapesBundle.rectangles);
+    _drawableCircles.addAll(shapesBundle.circles);
+  }
+
+  Map<String, dynamic> geoJsonFromDrawableShapes() {
+    return exportToGeoJson(
+      polygons: _polygons,
+      rectangles: _rectangles,
+      circles: _drawableCircles,
+    );
   }
 }
