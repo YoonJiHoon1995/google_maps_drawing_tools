@@ -33,7 +33,7 @@ flutter pub get
 ```
 ### Setup Requirement
 
-Before using this package, make sure you have set up [`google_maps_flutter`](https://pub.dev/packages/google_maps_flutter) correctly by following its official instructions.
+Before using this package, make sure you have set up correctly by following its official instructions [`here`](https://pub.dev/packages/google_maps_flutter).
 
 ---
 
