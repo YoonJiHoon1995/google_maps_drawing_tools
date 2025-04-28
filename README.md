@@ -23,7 +23,7 @@ Add the package to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  google_maps_drawing_tools: ^0.0.1
+  google_maps_drawing_tools: ^0.0.4
 ```
 
 Then, run:
