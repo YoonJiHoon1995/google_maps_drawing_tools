@@ -107,8 +107,9 @@ DrawableShapesBundle drawableShapesFromGeoJson(Map<String, dynamic> geoJson) {
 
 /// Helper: Checks if a list of points forms a rectangle (with 90-degree angle check)
 bool _isRectangle(List<LatLng> points) {
-  if (points.length != 4)
+  if (points.length != 4) {
     return false; // Rectangle should have exactly 4 points
+  }
 
   // Check if the points form a closed shape
   if (!_areLatLngEqual(points[0], points[3])) {

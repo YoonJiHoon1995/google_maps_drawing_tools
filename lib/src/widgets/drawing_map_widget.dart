@@ -317,8 +317,9 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
 
   Set<Marker> _buildCircleEditingMarkers() {
     final circle = widget.controller.selectedCircle;
-    if (circle == null || widget.controller.currentMode != DrawMode.circle)
+    if (circle == null || widget.controller.currentMode != DrawMode.circle) {
       return {};
+    }
 
     final center = circle.center;
     final handle = widget.controller.computeRadiusHandle(center, circle.radius);
