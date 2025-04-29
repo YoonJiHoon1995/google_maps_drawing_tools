@@ -86,25 +86,32 @@ class DrawablePolygon {
     };
   }
 
-  List<DrawablePolygon> drawablePolygonsFromGeoJson(Map<String, dynamic> geoJson) {
+  List<DrawablePolygon> drawablePolygonsFromGeoJson(
+      Map<String, dynamic> geoJson) {
     if (geoJson['type'] != 'FeatureCollection' || geoJson['features'] == null) {
       throw ArgumentError('Invalid GeoJSON: Expected a FeatureCollection.');
     }
 
     final features = geoJson['features'] as List<dynamic>;
 
-    return features.where((feature) => feature['geometry']['type'] == 'Polygon').map<DrawablePolygon>((feature) {
+    return features
+        .where((feature) => feature['geometry']['type'] == 'Polygon')
+        .map<DrawablePolygon>((feature) {
       final geometry = feature['geometry'];
       final properties = feature['properties'] ?? {};
 
       final List coordinates = geometry['coordinates'][0];
-      final points = coordinates.map<LatLng>((coord) => LatLng(coord[1], coord[0])).toList();
+      final points = coordinates
+          .map<LatLng>((coord) => LatLng(coord[1], coord[0]))
+          .toList();
 
       return DrawablePolygon(
         id: properties['id'] ?? UniqueKey().toString(),
         points: points,
-        strokeColor: (properties['strokeColor'] as int?)?.toColor() ?? Colors.blue,
-        fillColor: (properties['fillColor'] as int?)?.toColor() ?? Colors.transparent,
+        strokeColor:
+            (properties['strokeColor'] as int?)?.toColor() ?? Colors.blue,
+        fillColor:
+            (properties['fillColor'] as int?)?.toColor() ?? Colors.transparent,
         strokeWidth: (properties['strokeWidth'] as int?) ?? 2,
         editable: (properties['editable'] as bool?) ?? true,
         zIndex: (properties['zIndex'] as int?) ?? 1,
@@ -114,22 +121,28 @@ class DrawablePolygon {
     }).toList();
   }
 
-  DrawablePolygon drawablePolygonFromGeoJsonFeature(Map<String, dynamic> feature) {
-    if (feature['type'] != 'Feature' || feature['geometry']['type'] != 'Polygon') {
-      throw ArgumentError('Invalid GeoJSON: Expected a single Polygon Feature.');
+  DrawablePolygon drawablePolygonFromGeoJsonFeature(
+      Map<String, dynamic> feature) {
+    if (feature['type'] != 'Feature' ||
+        feature['geometry']['type'] != 'Polygon') {
+      throw ArgumentError(
+          'Invalid GeoJSON: Expected a single Polygon Feature.');
     }
 
     final geometry = feature['geometry'];
     final properties = feature['properties'] ?? {};
 
     final List coordinates = geometry['coordinates'][0];
-    final points = coordinates.map<LatLng>((coord) => LatLng(coord[1], coord[0])).toList();
+    final points =
+        coordinates.map<LatLng>((coord) => LatLng(coord[1], coord[0])).toList();
 
     return DrawablePolygon(
       id: properties['id'] ?? UniqueKey().toString(),
       points: points,
-      strokeColor: (properties['strokeColor'] as int?)?.toColor() ?? Colors.blue,
-      fillColor: (properties['fillColor'] as int?)?.toColor() ?? Colors.transparent,
+      strokeColor:
+          (properties['strokeColor'] as int?)?.toColor() ?? Colors.blue,
+      fillColor:
+          (properties['fillColor'] as int?)?.toColor() ?? Colors.transparent,
       strokeWidth: (properties['strokeWidth'] as int?) ?? 2,
       editable: (properties['editable'] as bool?) ?? true,
       zIndex: (properties['zIndex'] as int?) ?? 1,
@@ -139,7 +152,11 @@ class DrawablePolygon {
   }
 
   @override
-  bool operator ==(Object other) => identical(this, other) || other is DrawablePolygon && runtimeType == other.runtimeType && id == other.id;
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is DrawablePolygon &&
+          runtimeType == other.runtimeType &&
+          id == other.id;
 
   @override
   int get hashCode => id.hashCode;

@@ -33,7 +33,9 @@ DrawableShapesBundle drawableShapesFromGeoJson(Map<String, dynamic> geoJson) {
 
     if (type == 'Polygon') {
       final coordinates = geometry['coordinates'][0] as List;
-      final points = coordinates.map<LatLng>((coord) => LatLng(coord[1], coord[0])).toList();
+      final points = coordinates
+          .map<LatLng>((coord) => LatLng(coord[1], coord[0]))
+          .toList();
 
       // Check if it looks like a rectangle
       if (_isRectangle(points)) {
@@ -55,8 +57,10 @@ DrawableShapesBundle drawableShapesFromGeoJson(Map<String, dynamic> geoJson) {
             (bounds.southwest.latitude + bounds.northeast.latitude) / 2,
             (bounds.southwest.longitude + bounds.northeast.longitude) / 2,
           ),
-          strokeColor: (properties['strokeColor'] as int?)?.toColor() ?? Colors.blue,
-          fillColor: (properties['fillColor'] as int?)?.toColor() ?? Colors.transparent,
+          strokeColor:
+              (properties['strokeColor'] as int?)?.toColor() ?? Colors.blue,
+          fillColor: (properties['fillColor'] as int?)?.toColor() ??
+              Colors.transparent,
           strokeWidth: (properties['strokeWidth'] as int?) ?? 2,
           editable: (properties['editable'] as bool?) ?? true,
           zIndex: (properties['zIndex'] as int?) ?? 0,
@@ -67,8 +71,10 @@ DrawableShapesBundle drawableShapesFromGeoJson(Map<String, dynamic> geoJson) {
         polygons.add(DrawablePolygon(
           id: properties['id'] ?? UniqueKey().toString(),
           points: points,
-          strokeColor: (properties['strokeColor'] as int?)?.toColor() ?? Colors.blue,
-          fillColor: (properties['fillColor'] as int?)?.toColor() ?? Colors.transparent,
+          strokeColor:
+              (properties['strokeColor'] as int?)?.toColor() ?? Colors.blue,
+          fillColor: (properties['fillColor'] as int?)?.toColor() ??
+              Colors.transparent,
           strokeWidth: (properties['strokeWidth'] as int?) ?? 2,
           editable: (properties['editable'] as bool?) ?? true,
           zIndex: (properties['zIndex'] as int?) ?? 1,
@@ -82,8 +88,10 @@ DrawableShapesBundle drawableShapesFromGeoJson(Map<String, dynamic> geoJson) {
         id: properties['id'] ?? UniqueKey().toString(),
         center: LatLng(coordinates[1], coordinates[0]),
         radius: (properties['radius'] as num).toDouble(),
-        strokeColor: (properties['strokeColor'] as int?)?.toColor() ?? Colors.blue,
-        fillColor: (properties['fillColor'] as int?)?.toColor() ?? Colors.transparent,
+        strokeColor:
+            (properties['strokeColor'] as int?)?.toColor() ?? Colors.blue,
+        fillColor:
+            (properties['fillColor'] as int?)?.toColor() ?? Colors.transparent,
         strokeWidth: (properties['strokeWidth'] as int?) ?? 2,
         editable: (properties['editable'] as bool?) ?? true,
       ));
@@ -99,7 +107,8 @@ DrawableShapesBundle drawableShapesFromGeoJson(Map<String, dynamic> geoJson) {
 
 /// Helper: Checks if a list of points forms a rectangle (with 90-degree angle check)
 bool _isRectangle(List<LatLng> points) {
-  if (points.length != 4) return false; // Rectangle should have exactly 4 points
+  if (points.length != 4)
+    return false; // Rectangle should have exactly 4 points
 
   // Check if the points form a closed shape
   if (!_areLatLngEqual(points[0], points[3])) {
@@ -133,12 +142,16 @@ bool _isRectangle(List<LatLng> points) {
   bool isPerpendicular3 = isPerpendicular(v3, v4);
   bool isPerpendicular4 = isPerpendicular(v4, v1);
 
-  return isPerpendicular1 && isPerpendicular2 && isPerpendicular3 && isPerpendicular4;
+  return isPerpendicular1 &&
+      isPerpendicular2 &&
+      isPerpendicular3 &&
+      isPerpendicular4;
 }
 
 /// Helper to compare two LatLng objects for equality
 bool _areLatLngEqual(LatLng point1, LatLng point2) {
-  return point1.latitude == point2.latitude && point1.longitude == point2.longitude;
+  return point1.latitude == point2.latitude &&
+      point1.longitude == point2.longitude;
 }
 
 /// Export function to convert lists of DrawablePolygon, DrawableRectangle, and DrawableCircle

@@ -30,12 +30,18 @@ class DrawingController extends ChangeNotifier {
     BitmapDescriptor? rectangleStartMarker,
   }) {
     // Set default custom icon if none is passed
-    firstPolygonMarkerIcon = firstPolygonMarker ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen);
-    customPolygonMarkerIcon = customPolygonMarker ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue);
-    midpointPolygonMarkerIcon = midpointPolygonMarker ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueYellow);
-    circleCenterMarkerIcon = circleCenterMarker ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed);
-    circleRadiusHandleIcon = circleRadiusHandle ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange);
-    rectangleStartMarkerIcon = rectangleStartMarker ?? BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure);
+    firstPolygonMarkerIcon = firstPolygonMarker ??
+        BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen);
+    customPolygonMarkerIcon = customPolygonMarker ??
+        BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue);
+    midpointPolygonMarkerIcon = midpointPolygonMarker ??
+        BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueYellow);
+    circleCenterMarkerIcon = circleCenterMarker ??
+        BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed);
+    circleRadiusHandleIcon = circleRadiusHandle ??
+        BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueOrange);
+    rectangleStartMarkerIcon = rectangleStartMarker ??
+        BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure);
   }
 
   /// Polygon Drawing Logic
@@ -148,7 +154,8 @@ class DrawingController extends ChangeNotifier {
         _selectedRectangleId = updatedRectangle.id;
       }
 
-      onRectangleUpdated?.call(updatedRectangle); // Optional: you can add a rectangle update callback
+      onRectangleUpdated?.call(
+          updatedRectangle); // Optional: you can add a rectangle update callback
     }
 
     notifyListeners();
@@ -175,7 +182,8 @@ class DrawingController extends ChangeNotifier {
     final dLat = (p2.latitude - p1.latitude) * pi / 180;
     final dLng = (p2.longitude - p1.longitude) * pi / 180;
 
-    final a = sin(dLat / 2) * sin(dLat / 2) + cos(lat1) * cos(lat2) * sin(dLng / 2) * sin(dLng / 2);
+    final a = sin(dLat / 2) * sin(dLat / 2) +
+        cos(lat1) * cos(lat2) * sin(dLng / 2) * sin(dLng / 2);
     final c = 2 * atan2(sqrt(a), sqrt(1 - a));
 
     return earthRadius * c;
@@ -183,11 +191,13 @@ class DrawingController extends ChangeNotifier {
 
   // Utility to detect proximity
   bool isNear(LatLng p1, LatLng p2, {double thresholdInMeters = 15}) {
-    final distance = Geolocator.distanceBetween(p1.latitude, p1.longitude, p2.latitude, p2.longitude);
+    final distance = Geolocator.distanceBetween(
+        p1.latitude, p1.longitude, p2.latitude, p2.longitude);
     return distance < thresholdInMeters;
   }
 
-  bool isSameMarkerTap(LatLng tap, LatLng marker, {double thresholdMeters = 10.0}) {
+  bool isSameMarkerTap(LatLng tap, LatLng marker,
+      {double thresholdMeters = 10.0}) {
     return _calculateDistanceMeters(tap, marker) < thresholdMeters;
   }
 
@@ -250,11 +260,15 @@ class DrawingController extends ChangeNotifier {
 
     if (_activePolygon == null) {
       // First tap, start new polygon
-      _activePolygon = DrawablePolygon(id: UniqueKey().toString(), points: [point], strokeColor: Colors.transparent);
+      _activePolygon = DrawablePolygon(
+          id: UniqueKey().toString(),
+          points: [point],
+          strokeColor: Colors.transparent);
       _selectedPolygon = _activePolygon;
       _polygons.add(_activePolygon!);
 
-      _activePolyline = DrawablePolyline(id: _activePolygon!.id, points: [point], color: currentDrawingColor);
+      _activePolyline = DrawablePolyline(
+          id: _activePolygon!.id, points: [point], color: currentDrawingColor);
       _polylines.add(_activePolyline!);
     } else {
       final firstPoint = _activePolygon!.points.first;
@@ -264,7 +278,8 @@ class DrawingController extends ChangeNotifier {
 
       if (tappedFirstMarker && _activePolygon!.points.length > 2) {
         // Close polygon if tapped on first point
-        _activePolygon = _activePolygon!.copyWith(points: [..._activePolygon!.points, firstPoint]);
+        _activePolygon = _activePolygon!
+            .copyWith(points: [..._activePolygon!.points, firstPoint]);
         finishPolygon();
         return;
       }
@@ -274,10 +289,12 @@ class DrawingController extends ChangeNotifier {
       _activePolygon = _activePolygon!.copyWith(points: updatedPoints);
       _activePolyline = _activePolyline!.copyWith(points: updatedPoints);
 
-      final polygonIndex = _polygons.indexWhere((p) => p.id == _activePolygon!.id);
+      final polygonIndex =
+          _polygons.indexWhere((p) => p.id == _activePolygon!.id);
       if (polygonIndex != -1) _polygons[polygonIndex] = _activePolygon!;
 
-      final polylineIndex = _polylines.indexWhere((p) => p.id == _activePolyline!.id);
+      final polylineIndex =
+          _polylines.indexWhere((p) => p.id == _activePolyline!.id);
       if (polylineIndex != -1) _polylines[polylineIndex] = _activePolyline!;
 
       _selectedPolygon = _activePolygon;
@@ -287,7 +304,9 @@ class DrawingController extends ChangeNotifier {
   }
 
   void handleFirstMarkerTap() {
-    if (_currentMode == DrawMode.polygon && _activePolygon != null && _activePolygon!.points.length > 2) {
+    if (_currentMode == DrawMode.polygon &&
+        _activePolygon != null &&
+        _activePolygon!.points.length > 2) {
       finishPolygon();
     }
   }
@@ -318,7 +337,10 @@ class DrawingController extends ChangeNotifier {
   void finishPolygon() async {
     if (_activePolygon != null && _activePolygon!.points.length >= 3) {
       final points = _activePolygon!.points;
-      final finalizedPolygon = _activePolygon!.copyWith(points: points, strokeColor: currentDrawingColor, fillColor: currentDrawingColor.withValues(alpha: 0.2));
+      final finalizedPolygon = _activePolygon!.copyWith(
+          points: points,
+          strokeColor: currentDrawingColor,
+          fillColor: currentDrawingColor.withValues(alpha: 0.2));
       final index = _polygons.indexWhere((p) => p.id == _activePolygon!.id);
       if (index != -1) _polygons[index] = finalizedPolygon;
 
@@ -352,7 +374,8 @@ class DrawingController extends ChangeNotifier {
     // Update the polyline as well
     final polylineIndex = _polylines.indexWhere((p) => p.id == polygonId);
     if (polylineIndex != -1) {
-      _polylines[polylineIndex] = _polylines[polylineIndex].copyWith(points: updatedPoints);
+      _polylines[polylineIndex] =
+          _polylines[polylineIndex].copyWith(points: updatedPoints);
     }
 
     // Update selected polygon if matched
@@ -362,7 +385,8 @@ class DrawingController extends ChangeNotifier {
 
     if (_activePolygon?.id == polygonId) {
       _activePolygon = updatedPolygon;
-      final activePolylineIndex = _polylines.indexWhere((p) => p.id == polygonId);
+      final activePolylineIndex =
+          _polylines.indexWhere((p) => p.id == polygonId);
       if (activePolylineIndex != -1) {
         _activePolyline = _polylines[activePolylineIndex];
       }
@@ -372,7 +396,8 @@ class DrawingController extends ChangeNotifier {
   }
 
   LatLng midpoint(LatLng p1, LatLng p2) {
-    return LatLng((p1.latitude + p2.latitude) / 2, (p1.longitude + p2.longitude) / 2);
+    return LatLng(
+        (p1.latitude + p2.latitude) / 2, (p1.longitude + p2.longitude) / 2);
   }
 
   void _updatePolygon(String polygonId, List<LatLng> newPoints) {
@@ -401,16 +426,20 @@ class DrawingController extends ChangeNotifier {
     final nextIndex = (index == points.length - 1) ? 0 : index + 1;
 
     // Current midpoint between prev and next
-    final currentMidpoint = LatLng((points[prevIndex].latitude + points[nextIndex].latitude) / 2, (points[prevIndex].longitude + points[nextIndex].longitude) / 2);
+    final currentMidpoint = LatLng(
+        (points[prevIndex].latitude + points[nextIndex].latitude) / 2,
+        (points[prevIndex].longitude + points[nextIndex].longitude) / 2);
 
     // Calculate delta from current midpoint to new position
     final latDelta = newPosition.latitude - currentMidpoint.latitude;
     final lngDelta = newPosition.longitude - currentMidpoint.longitude;
 
     // Move both prev and next points slightly toward the new midpoint
-    final newPrevPoint = LatLng(points[prevIndex].latitude + latDelta / 2, points[prevIndex].longitude + lngDelta / 2);
+    final newPrevPoint = LatLng(points[prevIndex].latitude + latDelta / 2,
+        points[prevIndex].longitude + lngDelta / 2);
 
-    final newNextPoint = LatLng(points[nextIndex].latitude + latDelta / 2, points[nextIndex].longitude + lngDelta / 2);
+    final newNextPoint = LatLng(points[nextIndex].latitude + latDelta / 2,
+        points[nextIndex].longitude + lngDelta / 2);
 
     points[prevIndex] = newPrevPoint;
     points[nextIndex] = newNextPoint;
@@ -418,7 +447,8 @@ class DrawingController extends ChangeNotifier {
     _updatePolygon(polygonId, points);
   }
 
-  void insertMidpointAsVertex(String polygonId, int insertIndex, LatLng newPoint) {
+  void insertMidpointAsVertex(
+      String polygonId, int insertIndex, LatLng newPoint) {
     final index = _polygons.indexWhere((p) => p.id == polygonId);
     if (index == -1) return;
 
@@ -515,7 +545,8 @@ class DrawingController extends ChangeNotifier {
   String? _selectedCircleId;
   DrawableCircle? _selectedCircle;
 
-  DrawableCircle? get selectedCircle => _drawableCircles.firstWhereOrNull((c) => c.id == _selectedCircleId);
+  DrawableCircle? get selectedCircle =>
+      _drawableCircles.firstWhereOrNull((c) => c.id == _selectedCircleId);
 
   void setCircleCenterMarkerIcon(BitmapDescriptor icon) {
     circleCenterMarkerIcon = icon;
@@ -536,13 +567,20 @@ class DrawingController extends ChangeNotifier {
     }
   }
 
-  Set<Circle> get mapCircles => _drawableCircles.map((e) => e.toCircle(onTap: (pos) => selectCircle(e.id))).toSet();
+  Set<Circle> get mapCircles => _drawableCircles
+      .map((e) => e.toCircle(onTap: (pos) => selectCircle(e.id)))
+      .toSet();
 
   void addCircle(LatLng center, double zoom) {
     final id = 'circle_${DateTime.now().millisecondsSinceEpoch}';
     final radius = _initialRadiusFromZoom(zoom);
 
-    final newCircle = DrawableCircle(id: id, center: center, radius: radius, strokeColor: _currentDrawingColor, fillColor: _currentDrawingColor.withValues(alpha: 0.2));
+    final newCircle = DrawableCircle(
+        id: id,
+        center: center,
+        radius: radius,
+        strokeColor: _currentDrawingColor,
+        fillColor: _currentDrawingColor.withValues(alpha: 0.2));
     _drawableCircles.add(newCircle);
     selectCircle(id);
     onCircleDrawn?.call(_drawableCircles);
@@ -552,7 +590,19 @@ class DrawingController extends ChangeNotifier {
   double _initialRadiusFromZoom(double zoom) {
     // Approximate radius in meters based on zoom (tweak as needed)
     // Lower zoom → larger radius, higher zoom → smaller radius
-    const zoomToRadius = {10: 2000.0, 11: 1500.0, 12: 1000.0, 13: 750.0, 14: 500.0, 15: 250.0, 16: 150.0, 17: 100.0, 18: 75.0, 19: 50.0, 20: 25.0};
+    const zoomToRadius = {
+      10: 2000.0,
+      11: 1500.0,
+      12: 1000.0,
+      13: 750.0,
+      14: 500.0,
+      15: 250.0,
+      16: 150.0,
+      17: 100.0,
+      18: 75.0,
+      19: 50.0,
+      20: 25.0
+    };
 
     for (final entry in zoomToRadius.entries.toList().reversed) {
       if (zoom >= entry.key) return entry.value;
@@ -585,7 +635,8 @@ class DrawingController extends ChangeNotifier {
     final updated = circle.copyWith(radius: newRadius);
 
     _drawableCircles[index] = updated;
-    googleMapController?.showMarkerInfoWindow(MarkerId('${circle.id}_radius_handle'));
+    googleMapController
+        ?.showMarkerInfoWindow(MarkerId('${circle.id}_radius_handle'));
     notifyListeners();
     onCircleUpdated?.call(updated);
   }
@@ -594,7 +645,9 @@ class DrawingController extends ChangeNotifier {
   LatLng computeRadiusHandle(LatLng center, double radiusMeters) {
     const double earthRadius = 6371000; // in meters
     final dLat = 0.0;
-    final dLng = (radiusMeters / earthRadius) * (180 / pi) / cos(center.latitude * pi / 180);
+    final dLng = (radiusMeters / earthRadius) *
+        (180 / pi) /
+        cos(center.latitude * pi / 180);
     return LatLng(center.latitude + dLat, center.longitude + dLng);
   }
 
@@ -640,7 +693,12 @@ class DrawingController extends ChangeNotifier {
     final id = 'rectangle_${DateTime.now().millisecondsSinceEpoch}';
     final bounds = LatLngBounds(southwest: start, northeast: start);
     _rectangleStarted = true;
-    _drawingRectangle = DrawableRectangle(id: id, bounds: bounds, anchor: start, fillColor: _currentDrawingColor.withValues(alpha: 0.2), strokeColor: _currentDrawingColor);
+    _drawingRectangle = DrawableRectangle(
+        id: id,
+        bounds: bounds,
+        anchor: start,
+        fillColor: _currentDrawingColor.withValues(alpha: 0.2),
+        strokeColor: _currentDrawingColor);
     _rectangleStartMarker = Marker(
       markerId: MarkerId('rectangle_start_$id'),
       position: start,
@@ -794,7 +852,8 @@ class DrawingController extends ChangeNotifier {
           -1;
       if (index >= 0) {
         Marker cornerMarker = _rectangleEditHandles![index];
-        _rectangleEditHandles![index] = cornerMarker.copyWith(positionParam: currentPos);
+        _rectangleEditHandles![index] =
+            cornerMarker.copyWith(positionParam: currentPos);
         notifyListeners();
       }
     }
@@ -809,7 +868,8 @@ class DrawingController extends ChangeNotifier {
   bool get isFreehandDrawing => _isFreehandDrawing;
 
   String? _selectedFreehandPolygonId;
-  List<DrawablePolygon> get freehandPolygons => List.unmodifiable(_freehandPolygons);
+  List<DrawablePolygon> get freehandPolygons =>
+      List.unmodifiable(_freehandPolygons);
   DrawablePolygon? _selectedFreehandPolygon;
   DrawablePolygon? get selectedFreehandPolygon => _selectedFreehandPolygon;
   String? get selectedFreehandPolygonId => _selectedFreehandPolygonId;
@@ -869,7 +929,8 @@ class DrawingController extends ChangeNotifier {
       return;
     }
     _selectedFreehandPolygonId = id;
-    _selectedFreehandPolygon = _freehandPolygons.firstWhereOrNull((p) => p.id == id);
+    _selectedFreehandPolygon =
+        _freehandPolygons.firstWhereOrNull((p) => p.id == id);
     notifyListeners();
     if (_selectedFreehandPolygon != null) {
       onFreehandPolygonSelected?.call(_selectedFreehandPolygon!.id);
@@ -878,9 +939,11 @@ class DrawingController extends ChangeNotifier {
 
   void deselectFreehandPolygon() {
     if (_selectedFreehandPolygonId != null) {
-      final index = _freehandPolygons.indexWhere((p) => p.id == _selectedFreehandPolygonId);
+      final index = _freehandPolygons
+          .indexWhere((p) => p.id == _selectedFreehandPolygonId);
       if (index != -1) {
-        _freehandPolygons[index] = _freehandPolygons[index].copyWith(strokeWidth: 2);
+        _freehandPolygons[index] =
+            _freehandPolygons[index].copyWith(strokeWidth: 2);
       }
     }
     _selectedFreehandPolygonId = null;
@@ -903,7 +966,8 @@ class DrawingController extends ChangeNotifier {
         polygonId: PolygonId(poly.id),
         points: poly.points,
         strokeColor: isSelected ? Colors.blue : poly.strokeColor,
-        fillColor: isSelected ? Colors.blue.withValues(alpha: 0.2) : poly.fillColor,
+        fillColor:
+            isSelected ? Colors.blue.withValues(alpha: 0.2) : poly.fillColor,
         strokeWidth: isSelected ? 4 : 2,
         consumeTapEvents: true,
         onTap: () => selectFreehandPolygon(poly.id),

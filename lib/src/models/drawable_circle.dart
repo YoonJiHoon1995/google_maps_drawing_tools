@@ -73,7 +73,8 @@ class DrawableCircle {
     };
   }
 
-  List<DrawableCircle> drawableCirclesFromGeoJson(Map<String, dynamic> geoJson) {
+  List<DrawableCircle> drawableCirclesFromGeoJson(
+      Map<String, dynamic> geoJson) {
     if (geoJson['type'] != 'FeatureCollection') {
       throw ArgumentError('Invalid GeoJSON: Expected a FeatureCollection.');
     }
@@ -94,16 +95,20 @@ class DrawableCircle {
         id: properties['id'] ?? UniqueKey().toString(),
         center: LatLng(coordinates[1], coordinates[0]),
         radius: (properties['radius'] as num).toDouble(),
-        strokeColor: (properties['strokeColor'] as int?)?.toColor() ?? Colors.blue,
-        fillColor: (properties['fillColor'] as int?)?.toColor() ?? Colors.transparent,
+        strokeColor:
+            (properties['strokeColor'] as int?)?.toColor() ?? Colors.blue,
+        fillColor:
+            (properties['fillColor'] as int?)?.toColor() ?? Colors.transparent,
         strokeWidth: (properties['strokeWidth'] as int?) ?? 2,
         editable: (properties['editable'] as bool?) ?? true,
       );
     }).toList();
   }
 
-  DrawableCircle drawableCircleFromGeoJsonFeature(Map<String, dynamic> feature) {
-    if (feature['type'] != 'Feature' || feature['geometry']['type'] != 'Point') {
+  DrawableCircle drawableCircleFromGeoJsonFeature(
+      Map<String, dynamic> feature) {
+    if (feature['type'] != 'Feature' ||
+        feature['geometry']['type'] != 'Point') {
       throw ArgumentError('Invalid GeoJSON: Expected a single Point Feature.');
     }
 
@@ -116,8 +121,10 @@ class DrawableCircle {
       id: properties['id'] ?? UniqueKey().toString(),
       center: LatLng(coordinates[1], coordinates[0]),
       radius: (properties['radius'] as num).toDouble(),
-      strokeColor: (properties['strokeColor'] as int?)?.toColor() ?? Colors.blue,
-      fillColor: (properties['fillColor'] as int?)?.toColor() ?? Colors.transparent,
+      strokeColor:
+          (properties['strokeColor'] as int?)?.toColor() ?? Colors.blue,
+      fillColor:
+          (properties['fillColor'] as int?)?.toColor() ?? Colors.transparent,
       strokeWidth: (properties['strokeWidth'] as int?) ?? 2,
       editable: (properties['editable'] as bool?) ?? true,
     );

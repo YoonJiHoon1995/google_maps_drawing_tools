@@ -111,7 +111,8 @@ class DrawableRectangle {
     };
   }
 
-  List<DrawableRectangle> drawableRectanglesFromGeoJson(Map<String, dynamic> geoJson) {
+  List<DrawableRectangle> drawableRectanglesFromGeoJson(
+      Map<String, dynamic> geoJson) {
     if (geoJson['type'] != 'FeatureCollection') {
       throw ArgumentError('Invalid GeoJSON: Expected a FeatureCollection.');
     }
@@ -123,13 +124,15 @@ class DrawableRectangle {
       final properties = feature['properties'] ?? {};
 
       if (geometry['type'] != 'Polygon') {
-        throw ArgumentError('Invalid Geometry: Expected Polygon for Rectangle.');
+        throw ArgumentError(
+            'Invalid Geometry: Expected Polygon for Rectangle.');
       }
 
       final List coordinates = geometry['coordinates'][0];
 
       if (coordinates.length < 4) {
-        throw ArgumentError('Invalid Polygon: A rectangle must have at least 4 points.');
+        throw ArgumentError(
+            'Invalid Polygon: A rectangle must have at least 4 points.');
       }
 
       final southwest = LatLng(coordinates[0][1], coordinates[0][0]);
@@ -138,9 +141,12 @@ class DrawableRectangle {
       return DrawableRectangle(
         id: properties['id'] ?? UniqueKey().toString(),
         bounds: LatLngBounds(southwest: southwest, northeast: northeast),
-        anchor: southwest, // You can customize which point to use as anchor if needed
-        strokeColor: (properties['strokeColor'] as int?)?.toColor() ?? Colors.blue,
-        fillColor: (properties['fillColor'] as int?)?.toColor() ?? Colors.transparent,
+        anchor:
+            southwest, // You can customize which point to use as anchor if needed
+        strokeColor:
+            (properties['strokeColor'] as int?)?.toColor() ?? Colors.blue,
+        fillColor:
+            (properties['fillColor'] as int?)?.toColor() ?? Colors.transparent,
         strokeWidth: (properties['strokeWidth'] as int?) ?? 2,
         editable: (properties['editable'] as bool?) ?? true,
         zIndex: (properties['zIndex'] as int?) ?? 0,
@@ -150,9 +156,12 @@ class DrawableRectangle {
     }).toList();
   }
 
-  DrawableRectangle drawableRectangleFromGeoJsonFeature(Map<String, dynamic> feature) {
-    if (feature['type'] != 'Feature' || feature['geometry']['type'] != 'Polygon') {
-      throw ArgumentError('Invalid GeoJSON: Expected a single Polygon Feature.');
+  DrawableRectangle drawableRectangleFromGeoJsonFeature(
+      Map<String, dynamic> feature) {
+    if (feature['type'] != 'Feature' ||
+        feature['geometry']['type'] != 'Polygon') {
+      throw ArgumentError(
+          'Invalid GeoJSON: Expected a single Polygon Feature.');
     }
 
     final geometry = feature['geometry'];
@@ -161,7 +170,8 @@ class DrawableRectangle {
     final List coordinates = geometry['coordinates'][0];
 
     if (coordinates.length < 4) {
-      throw ArgumentError('Invalid Polygon: A rectangle must have at least 4 points.');
+      throw ArgumentError(
+          'Invalid Polygon: A rectangle must have at least 4 points.');
     }
 
     final southwest = LatLng(coordinates[0][1], coordinates[0][0]);
@@ -171,8 +181,10 @@ class DrawableRectangle {
       id: properties['id'] ?? UniqueKey().toString(),
       bounds: LatLngBounds(southwest: southwest, northeast: northeast),
       anchor: southwest,
-      strokeColor: (properties['strokeColor'] as int?)?.toColor() ?? Colors.blue,
-      fillColor: (properties['fillColor'] as int?)?.toColor() ?? Colors.transparent,
+      strokeColor:
+          (properties['strokeColor'] as int?)?.toColor() ?? Colors.blue,
+      fillColor:
+          (properties['fillColor'] as int?)?.toColor() ?? Colors.transparent,
       strokeWidth: (properties['strokeWidth'] as int?) ?? 2,
       editable: (properties['editable'] as bool?) ?? true,
       zIndex: (properties['zIndex'] as int?) ?? 0,

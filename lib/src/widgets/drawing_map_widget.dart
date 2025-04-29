@@ -131,7 +131,8 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
             widget.controller.addPolygonPoint(position);
           } else {
             // Try selecting an existing polygon first
-            final wasPolygonSelected = widget.controller.selectPolygonAt(position);
+            final wasPolygonSelected =
+                widget.controller.selectPolygonAt(position);
 
             // If no polygon was selected, start new polygon
             if (!wasPolygonSelected) {
@@ -169,8 +170,6 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
     }
   }
 
-
-
   Set<Marker> _buildEditingMarkers() {
     final selected = widget.controller.selectedPolygon;
 
@@ -188,7 +187,8 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
           widget.controller.currentZoom,
         );
 
-    final uniquePoints = isClosed ? points.sublist(0, points.length - 1) : points;
+    final uniquePoints =
+        isClosed ? points.sublist(0, points.length - 1) : points;
 
     final editingMarkers = <Marker>{};
 
@@ -202,30 +202,32 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
 
       editingMarkers.add(
         Marker(
-          markerId: MarkerId('${selected.id}_marker_$i'),
-          position: point,
-          draggable: true,
-          icon: isFirst
-              ? widget.controller.firstPolygonMarkerIcon
-              : widget.controller.customPolygonMarkerIcon,  // Use custom marker icon
-          onDragEnd: (newPosition) {
-            widget.controller.updatePolygonPoint(selected.id, i, newPosition);
-          },
-          onTap: () {
-            // Finish polygon if user taps on the first marker while drawing
-            if (isFirst && isDrawing && hasEnoughPoints) {
-              widget.controller.finishPolygon();
-            }
-          },
-          infoWindow: InfoWindow(
-            title: isFirst && isDrawing && hasEnoughPoints ? "Tap to Finish Drawing ✅" : "Long press and drag to update point",
+            markerId: MarkerId('${selected.id}_marker_$i'),
+            position: point,
+            draggable: true,
+            icon: isFirst
+                ? widget.controller.firstPolygonMarkerIcon
+                : widget.controller
+                    .customPolygonMarkerIcon, // Use custom marker icon
+            onDragEnd: (newPosition) {
+              widget.controller.updatePolygonPoint(selected.id, i, newPosition);
+            },
             onTap: () {
+              // Finish polygon if user taps on the first marker while drawing
               if (isFirst && isDrawing && hasEnoughPoints) {
                 widget.controller.finishPolygon();
               }
             },
-          )
-        ),
+            infoWindow: InfoWindow(
+              title: isFirst && isDrawing && hasEnoughPoints
+                  ? "Tap to Finish Drawing ✅"
+                  : "Long press and drag to update point",
+              onTap: () {
+                if (isFirst && isDrawing && hasEnoughPoints) {
+                  widget.controller.finishPolygon();
+                }
+              },
+            )),
       );
     }
 
@@ -236,21 +238,23 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
         if (!mounted) return;
 
         // Try showing the InfoWindow, catching the error if it fails
-        widget.controller.googleMapController?.showMarkerInfoWindow(markerId).catchError((e) {
+        widget.controller.googleMapController
+            ?.showMarkerInfoWindow(markerId)
+            .catchError((e) {
           debugPrint("InfoWindow could not be shown, can be ignored");
         });
 
         Future.delayed(Duration(milliseconds: 4000), () {
           if (!mounted) return;
 
-          widget.controller.googleMapController?.hideMarkerInfoWindow(markerId).catchError((e) {
+          widget.controller.googleMapController
+              ?.hideMarkerInfoWindow(markerId)
+              .catchError((e) {
             debugPrint("InfoWindow could not be hidden, can be ignored");
           });
         });
       });
     }
-
-
 
     // Midpoint markers — show ONLY if polygon is selected AND drawing is finished
     final shouldShowMidpoints =
@@ -270,10 +274,12 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
             position: mid,
             draggable: true,
             onDragEnd: (newPosition) {
-              widget.controller.insertMidpointAsVertex(selected.id, i + 1, newPosition);
+              widget.controller
+                  .insertMidpointAsVertex(selected.id, i + 1, newPosition);
             },
             icon: widget.controller.midpointPolygonMarkerIcon,
-            infoWindow: InfoWindow(title: 'Long press and drag to add new point'),
+            infoWindow:
+                InfoWindow(title: 'Long press and drag to add new point'),
           ),
         );
       }
@@ -288,15 +294,18 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
       final currentCursor = widget.controller.currentCursorPosition;
 
       if (currentCursor != null &&
-          widget.controller.isNear(firstPoint, currentCursor, thresholdInMeters: 15)) {
+          widget.controller
+              .isNear(firstPoint, currentCursor, thresholdInMeters: 15)) {
         // This could be used to show a visual hint marker for snapping
         editingMarkers.add(
           Marker(
             markerId: MarkerId('${selected.id}_snap_hint'),
             position: firstPoint,
-            icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+            icon:
+                BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
             onTap: () {
-              widget.controller.finishPolygon(); // Tap on snap hint also finishes
+              widget.controller
+                  .finishPolygon(); // Tap on snap hint also finishes
             },
           ),
         );
@@ -306,10 +315,10 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
     return editingMarkers;
   }
 
-
   Set<Marker> _buildCircleEditingMarkers() {
     final circle = widget.controller.selectedCircle;
-    if (circle == null || widget.controller.currentMode != DrawMode.circle) return {};
+    if (circle == null || widget.controller.currentMode != DrawMode.circle)
+      return {};
 
     final center = circle.center;
     final handle = widget.controller.computeRadiusHandle(center, circle.radius);
@@ -348,7 +357,8 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
         ),
       ),
     };
-    widget.controller.googleMapController?.showMarkerInfoWindow(MarkerId('${circle.id}_radius_handle'));
+    widget.controller.googleMapController
+        ?.showMarkerInfoWindow(MarkerId('${circle.id}_radius_handle'));
     return markers;
   }
 
@@ -398,7 +408,6 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
 
   @override
   Widget build(BuildContext context) {
-
     return Stack(
       children: [
         Positioned.fill(
@@ -407,7 +416,7 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
             initialCameraPosition: widget.initialCameraPosition,
             onMapCreated: (controller) {
               widget.controller.googleMapController = controller;
-              if(widget.onMapCreated != null) {
+              if (widget.onMapCreated != null) {
                 widget.onMapCreated!(controller);
               }
             },
@@ -418,27 +427,31 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
               ...allRectanglePolygons,
               if (widget.controller.drawingFreehandPolygon != null)
                 widget.controller.drawingFreehandPolygon!,
-              if (drawingRectanglePolygon != null)
-                drawingRectanglePolygon!,
+              if (drawingRectanglePolygon != null) drawingRectanglePolygon!,
             },
-            polylines: {...?widget.polylines, ...widget.controller.mapPolylines},
+            polylines: {
+              ...?widget.polylines,
+              ...widget.controller.mapPolylines
+            },
             markers: {
               ...?widget.markers,
-              ...widget.controller.rectangleStartMarker != null ? [widget.controller.rectangleStartMarker!] : [],
-              ..._buildEditingMarkers(),       // polygon
+              ...widget.controller.rectangleStartMarker != null
+                  ? [widget.controller.rectangleStartMarker!]
+                  : [],
+              ..._buildEditingMarkers(), // polygon
               ..._buildCircleEditingMarkers(), // circle
               ...widget.controller.rectangleEditHandles,
             },
             onTap: (latLng) {
               _onMapTap(latLng);
-              if(widget.onTap != null) {
+              if (widget.onTap != null) {
                 widget.onTap!(latLng);
               }
             },
             myLocationEnabled: widget.myLocationEnabled,
             myLocationButtonEnabled: widget.myLocationButtonEnabled,
             onCameraMove: (position) {
-              if(widget.onCameraMove != null) {
+              if (widget.onCameraMove != null) {
                 widget.onCameraMove!(position);
               }
               widget.controller.currentZoom = position.zoom;
@@ -458,8 +471,10 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
             zoomControlsEnabled: widget.zoomControlsEnabled ?? true,
             indoorViewEnabled: widget.indoorViewEnabled ?? false,
             buildingsEnabled: widget.buildingsEnabled ?? true,
-            cameraTargetBounds: widget.cameraTargetBounds ?? CameraTargetBounds.unbounded,
-            minMaxZoomPreference: widget.minMaxZoomPreference ?? MinMaxZoomPreference.unbounded,
+            cameraTargetBounds:
+                widget.cameraTargetBounds ?? CameraTargetBounds.unbounded,
+            minMaxZoomPreference:
+                widget.minMaxZoomPreference ?? MinMaxZoomPreference.unbounded,
             tileOverlays: widget.tileOverlays ?? const {},
             padding: widget.padding,
             mapToolbarEnabled: widget.mapToolbarEnabled,
@@ -475,70 +490,95 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
             liteModeEnabled: widget.liteModeEnabled,
             onCameraIdle: widget.onCameraIdle,
             onCameraMoveStarted: widget.onCameraMoveStarted,
-            webGestureHandling: widget.controller.onPanStarted || widget.controller.rectangleStarted ? WebGestureHandling.none : widget.webGestureHandling,
+            webGestureHandling: widget.controller.onPanStarted ||
+                    widget.controller.rectangleStarted
+                ? WebGestureHandling.none
+                : widget.webGestureHandling,
           ),
         ),
         // if(_isDrawingFreeHand || (_isDrawingRectangle && widget.controller.rectangleStarted))
         Positioned.fill(
           child: GestureDetector(
-            onPanStart: _isDrawingFreeHand ?  (details) async {
-              widget.controller.onPanStarted = true;
-              widget.controller.onPanEnded = false;
-              final box = context.findRenderObject() as RenderBox?;
-              if (box != null) {
-                final localOffset = box.globalToLocal(details.globalPosition);
-                double pixelRatio = MediaQuery.of(context).devicePixelRatio;
-                if(kIsWeb || Platform.isIOS) {
-                  pixelRatio = 1;
-                }
-                final screenCoordinate = ScreenCoordinate(
-                  x: (localOffset.dx * pixelRatio).round(),
-                  y: (localOffset.dy * pixelRatio).round(),
-                );
-                final latLng = await widget.controller.googleMapController!.getLatLng(screenCoordinate);
-                widget.controller.startFreehandDrawing();
-                widget.controller.addFreehandPoint(latLng);
-              }
-            } : null,
-            onPanUpdate: _isDrawingRectangle && widget.controller.selectedRectangle == null ? (details) async {
-              if (_activeDrawingStart != null && widget.controller.googleMapController != null) {
-                // Get RenderBox from context
-                final box = context.findRenderObject() as RenderBox?;
-                if (box != null) {
-                  final localOffset = box.globalToLocal(details.globalPosition);
-                  double pixelRatio = MediaQuery.of(context).devicePixelRatio;
-                  if(kIsWeb || Platform.isIOS) {
-                    pixelRatio = 1;
+            onPanStart: _isDrawingFreeHand
+                ? (details) async {
+                    widget.controller.onPanStarted = true;
+                    widget.controller.onPanEnded = false;
+                    final box = context.findRenderObject() as RenderBox?;
+                    if (box != null) {
+                      final localOffset =
+                          box.globalToLocal(details.globalPosition);
+                      double pixelRatio =
+                          MediaQuery.of(context).devicePixelRatio;
+                      if (kIsWeb || Platform.isIOS) {
+                        pixelRatio = 1;
+                      }
+                      final screenCoordinate = ScreenCoordinate(
+                        x: (localOffset.dx * pixelRatio).round(),
+                        y: (localOffset.dy * pixelRatio).round(),
+                      );
+                      final latLng = await widget
+                          .controller.googleMapController!
+                          .getLatLng(screenCoordinate);
+                      widget.controller.startFreehandDrawing();
+                      widget.controller.addFreehandPoint(latLng);
+                    }
                   }
-                  final screenCoordinate = ScreenCoordinate(
-                    x: (localOffset.dx * pixelRatio).round(),
-                    y: (localOffset.dy * pixelRatio).round(),
-                  );
-                  final newLatLng = await widget.controller.googleMapController!.getLatLng(screenCoordinate);
-                  widget.controller.updateDrawingRectangle(newLatLng);
-                }
-              }
-            } : (_isDrawingFreeHand ? (details) async {
-              final box = context.findRenderObject() as RenderBox?;
-              if (box != null) {
-                final localOffset = box.globalToLocal(details.globalPosition);
-                double pixelRatio = MediaQuery.of(context).devicePixelRatio;
-                if(kIsWeb || Platform.isIOS) {
-                  pixelRatio = 1;
-                }
-                final screenCoordinate = ScreenCoordinate(
-                  x: (localOffset.dx * pixelRatio).round(),
-                  y: (localOffset.dy * pixelRatio).round(),
-                );
-                final latLng = await widget.controller.googleMapController!.getLatLng(screenCoordinate);
-                widget.controller.addFreehandPoint(latLng);
-              }
-            } : null),
-            onPanEnd: _isDrawingFreeHand ? (details) {
-              widget.controller.onPanStarted = false;
-              widget.controller.onPanEnded = true;
-              widget.controller.finishFreehandDrawing();
-            } : null,
+                : null,
+            onPanUpdate: _isDrawingRectangle &&
+                    widget.controller.selectedRectangle == null
+                ? (details) async {
+                    if (_activeDrawingStart != null &&
+                        widget.controller.googleMapController != null) {
+                      // Get RenderBox from context
+                      final box = context.findRenderObject() as RenderBox?;
+                      if (box != null) {
+                        final localOffset =
+                            box.globalToLocal(details.globalPosition);
+                        double pixelRatio =
+                            MediaQuery.of(context).devicePixelRatio;
+                        if (kIsWeb || Platform.isIOS) {
+                          pixelRatio = 1;
+                        }
+                        final screenCoordinate = ScreenCoordinate(
+                          x: (localOffset.dx * pixelRatio).round(),
+                          y: (localOffset.dy * pixelRatio).round(),
+                        );
+                        final newLatLng = await widget
+                            .controller.googleMapController!
+                            .getLatLng(screenCoordinate);
+                        widget.controller.updateDrawingRectangle(newLatLng);
+                      }
+                    }
+                  }
+                : (_isDrawingFreeHand
+                    ? (details) async {
+                        final box = context.findRenderObject() as RenderBox?;
+                        if (box != null) {
+                          final localOffset =
+                              box.globalToLocal(details.globalPosition);
+                          double pixelRatio =
+                              MediaQuery.of(context).devicePixelRatio;
+                          if (kIsWeb || Platform.isIOS) {
+                            pixelRatio = 1;
+                          }
+                          final screenCoordinate = ScreenCoordinate(
+                            x: (localOffset.dx * pixelRatio).round(),
+                            y: (localOffset.dy * pixelRatio).round(),
+                          );
+                          final latLng = await widget
+                              .controller.googleMapController!
+                              .getLatLng(screenCoordinate);
+                          widget.controller.addFreehandPoint(latLng);
+                        }
+                      }
+                    : null),
+            onPanEnd: _isDrawingFreeHand
+                ? (details) {
+                    widget.controller.onPanStarted = false;
+                    widget.controller.onPanEnded = true;
+                    widget.controller.finishFreehandDrawing();
+                  }
+                : null,
             behavior: HitTestBehavior.translucent,
           ),
         ),

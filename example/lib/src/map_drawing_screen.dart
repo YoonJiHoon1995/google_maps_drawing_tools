@@ -16,7 +16,9 @@ class MapDrawingScreen extends StatefulWidget {
 class _MapDrawingScreenState extends State<MapDrawingScreen> {
   final DrawingController _drawingController = DrawingController(
     onPolygonDrawn: (allPolygons) {
-      debugPrint("All polygons drawn: ${allPolygons.map((polygon) => polygon.id).join(", ")}");
+      debugPrint(
+        "All polygons drawn: ${allPolygons.map((polygon) => polygon.id).join(", ")}",
+      );
     },
     onPolygonSelected: (polygon) {
       debugPrint("Selected polygon: ${polygon.id}");
@@ -34,13 +36,17 @@ class _MapDrawingScreenState extends State<MapDrawingScreen> {
     super.initState();
 
     // Set a custom marker icon
-    _drawingController.setPolygonCustomMarkerIcon(BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed));
+    _drawingController.setPolygonCustomMarkerIcon(
+      BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+    );
 
     // Handle the drawn polygons
     _drawingController.onPolygonDrawn = (allPolygons) {
       setState(() {
         // Handle the drawn polygons list
-        debugPrint("All drawn polygons: ${allPolygons.map((polygon) => polygon.id).join(", ")}");
+        debugPrint(
+          "All drawn polygons: ${allPolygons.map((polygon) => polygon.id).join(", ")}",
+        );
       });
     };
   }
@@ -51,7 +57,10 @@ class _MapDrawingScreenState extends State<MapDrawingScreen> {
       body: Stack(
         children: [
           DrawingMapWidget(
-            initialCameraPosition: CameraPosition(target: LatLng(37.7749, -122.4194), zoom: 14),
+            initialCameraPosition: CameraPosition(
+              target: LatLng(37.7749, -122.4194),
+              zoom: 14,
+            ),
             controller: _drawingController,
             webGestureHandling: WebGestureHandling.cooperative,
           ),
@@ -59,7 +68,16 @@ class _MapDrawingScreenState extends State<MapDrawingScreen> {
             top: 20,
             left: 20,
             child: PointerInterceptor(
-              child: FloatingActionButton(onPressed: () => debugPrint(jsonEncode(_drawingController.geoJsonFromDrawableShapes())), tooltip: 'Export as GeoJSON', child: Icon(Icons.exit_to_app)),
+              child: FloatingActionButton(
+                onPressed:
+                    () => debugPrint(
+                      jsonEncode(
+                        _drawingController.geoJsonFromDrawableShapes(),
+                      ),
+                    ),
+                tooltip: 'Export as GeoJSON',
+                child: Icon(Icons.exit_to_app),
+              ),
             ),
           ),
           Positioned(
@@ -70,11 +88,14 @@ class _MapDrawingScreenState extends State<MapDrawingScreen> {
                 onPressed: () {
                   if (_drawingController.currentMode == DrawMode.polygon) {
                     _drawingController.deleteSelectedPolygon();
-                  } else if (_drawingController.currentMode == DrawMode.circle) {
+                  } else if (_drawingController.currentMode ==
+                      DrawMode.circle) {
                     _drawingController.deleteSelectedCircle();
-                  } else if (_drawingController.currentMode == DrawMode.rectangle) {
+                  } else if (_drawingController.currentMode ==
+                      DrawMode.rectangle) {
                     _drawingController.deleteSelectedRectangle();
-                  } else if (_drawingController.currentMode == DrawMode.freehand) {
+                  } else if (_drawingController.currentMode ==
+                      DrawMode.freehand) {
                     _drawingController.deleteSelectedFreehandPolygon();
                   }
                 },
@@ -88,9 +109,14 @@ class _MapDrawingScreenState extends State<MapDrawingScreen> {
             right: 20,
             child: PointerInterceptor(
               child: FloatingActionButton(
-                onPressed: () => _drawingController.setDrawMode(DrawMode.freehand),
+                onPressed:
+                    () => _drawingController.setDrawMode(DrawMode.freehand),
                 tooltip: 'Draw Freehand',
-                child: Icon(_drawingController.currentMode == DrawMode.freehand ? Icons.shape_line : Icons.shape_line_outlined),
+                child: Icon(
+                  _drawingController.currentMode == DrawMode.freehand
+                      ? Icons.shape_line
+                      : Icons.shape_line_outlined,
+                ),
               ),
             ),
           ),
@@ -99,9 +125,14 @@ class _MapDrawingScreenState extends State<MapDrawingScreen> {
             right: 20,
             child: PointerInterceptor(
               child: FloatingActionButton(
-                onPressed: () => _drawingController.setDrawMode(DrawMode.polygon),
+                onPressed:
+                    () => _drawingController.setDrawMode(DrawMode.polygon),
                 tooltip: 'Draw Polygon',
-                child: Icon(_drawingController.currentMode == DrawMode.polygon ? Icons.pentagon : Icons.pentagon_outlined),
+                child: Icon(
+                  _drawingController.currentMode == DrawMode.polygon
+                      ? Icons.pentagon
+                      : Icons.pentagon_outlined,
+                ),
               ),
             ),
           ),
@@ -110,9 +141,14 @@ class _MapDrawingScreenState extends State<MapDrawingScreen> {
             right: 20,
             child: PointerInterceptor(
               child: FloatingActionButton(
-                onPressed: () => _drawingController.setDrawMode(DrawMode.rectangle),
+                onPressed:
+                    () => _drawingController.setDrawMode(DrawMode.rectangle),
                 tooltip: 'Draw Rectangle',
-                child: Icon(_drawingController.currentMode == DrawMode.rectangle ? Icons.rectangle : Icons.rectangle_outlined),
+                child: Icon(
+                  _drawingController.currentMode == DrawMode.rectangle
+                      ? Icons.rectangle
+                      : Icons.rectangle_outlined,
+                ),
               ),
             ),
           ),
@@ -121,9 +157,14 @@ class _MapDrawingScreenState extends State<MapDrawingScreen> {
             right: 20,
             child: PointerInterceptor(
               child: FloatingActionButton(
-                onPressed: () => _drawingController.setDrawMode(DrawMode.circle),
+                onPressed:
+                    () => _drawingController.setDrawMode(DrawMode.circle),
                 tooltip: 'Draw Circle',
-                child: Icon(_drawingController.currentMode == DrawMode.circle ? Icons.circle : Icons.circle_outlined),
+                child: Icon(
+                  _drawingController.currentMode == DrawMode.circle
+                      ? Icons.circle
+                      : Icons.circle_outlined,
+                ),
               ),
             ),
           ),
