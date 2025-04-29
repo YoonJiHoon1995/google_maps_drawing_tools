@@ -1,6 +1,6 @@
 name: google_maps_drawing_tools
 description: A Flutter plugin that adds drawing tools (polygons, circles, rectangles) on Google Maps, enabling users to interactively draw and edit shapes within a Flutter application.
-version: 0.0.5
+version: 0.0.6
 homepage: https://github.com/ExploreAritra/google_maps_drawing_tools
 repository: https://github.com/ExploreAritra/google_maps_drawing_tools
 
