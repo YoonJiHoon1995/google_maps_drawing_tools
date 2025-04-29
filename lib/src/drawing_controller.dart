@@ -312,9 +312,6 @@ class DrawingController extends ChangeNotifier {
 
   bool isNearPoint(LatLng p1, LatLng p2, double zoom) {
     final threshold = _snapThresholdForZoom(zoom);
-    debugPrint("Threshold: $threshold");
-    debugPrint("Distance between points: ${_calculateDistanceMeters(p1, p2)}");
-
     return _calculateDistanceMeters(p1, p2) < threshold;
   }
 
@@ -615,7 +612,7 @@ class DrawingController extends ChangeNotifier {
 
   /// Draw Rectangle Logic
 
-  List<DrawableRectangle> _rectangles = [];
+  final List<DrawableRectangle> _rectangles = [];
   DrawableRectangle? _drawingRectangle;
   DrawableRectangle? _selectedRectangle;
 
@@ -688,12 +685,10 @@ class DrawingController extends ChangeNotifier {
     if (currentMode != DrawMode.rectangle) {
       return;
     }
-    debugPrint("OnTapRectangle");
     _selectedRectangleId = id;
     _selectedRectangle = _rectangles.firstWhereOrNull((p) => p.id == id);
     notifyListeners();
     if (_selectedRectangle != null) {
-      debugPrint("Selected Rectangle: ${_selectedRectangle!.id}");
       onRectangleSelected?.call(_selectedRectangle!.id);
     }
   }
@@ -782,7 +777,6 @@ class DrawingController extends ChangeNotifier {
     }
 
     try {
-      debugPrint("Reached here in try");
       final updated = rect.copyWith(
         bounds: LatLngBounds(southwest: sw, northeast: ne),
       );
@@ -792,11 +786,8 @@ class DrawingController extends ChangeNotifier {
         _rectangles[index] = updated;
         _selectedRectangle = updated;
         notifyListeners();
-        debugPrint("Try updated rectangle");
       }
-      debugPrint("Executed try");
     } catch (e) {
-      debugPrint("Reached here in catch");
       int index = _rectangleEditHandles?.indexWhere(
             (element) => element.markerId.value == 'handle_$cornerId',
           ) ??
@@ -811,7 +802,7 @@ class DrawingController extends ChangeNotifier {
 
   /// Drawing Freehand
 
-  List<LatLng> _freehandPoints = [];
+  final List<LatLng> _freehandPoints = [];
   bool _isFreehandDrawing = false;
   final List<DrawablePolygon> _freehandPolygons = [];
   List<LatLng> get freehandPoints => _freehandPoints;
@@ -877,12 +868,10 @@ class DrawingController extends ChangeNotifier {
     if (currentMode != DrawMode.freehand) {
       return;
     }
-    debugPrint("OnTapRectangle");
     _selectedFreehandPolygonId = id;
     _selectedFreehandPolygon = _freehandPolygons.firstWhereOrNull((p) => p.id == id);
     notifyListeners();
     if (_selectedFreehandPolygon != null) {
-      debugPrint("Selected Rectangle: ${_selectedFreehandPolygon!.id}");
       onFreehandPolygonSelected?.call(_selectedFreehandPolygon!.id);
     }
   }

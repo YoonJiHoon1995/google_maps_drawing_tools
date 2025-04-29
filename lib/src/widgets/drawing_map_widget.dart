@@ -121,7 +121,6 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
   }
 
   void _onMapTap(LatLng position) {
-    print("_onMapTap");
     switch (widget.controller.currentMode) {
       case DrawMode.polygon:
         if (widget.controller.currentMode == DrawMode.polygon) {
@@ -489,7 +488,7 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
               if (box != null) {
                 final localOffset = box.globalToLocal(details.globalPosition);
                 double pixelRatio = MediaQuery.of(context).devicePixelRatio;
-                if(!kIsWeb && Platform.isIOS) {
+                if(kIsWeb || Platform.isIOS) {
                   pixelRatio = 1;
                 }
                 final screenCoordinate = ScreenCoordinate(
@@ -508,7 +507,7 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
                 if (box != null) {
                   final localOffset = box.globalToLocal(details.globalPosition);
                   double pixelRatio = MediaQuery.of(context).devicePixelRatio;
-                  if(!kIsWeb && Platform.isIOS) {
+                  if(kIsWeb || Platform.isIOS) {
                     pixelRatio = 1;
                   }
                   final screenCoordinate = ScreenCoordinate(
@@ -524,7 +523,7 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
               if (box != null) {
                 final localOffset = box.globalToLocal(details.globalPosition);
                 double pixelRatio = MediaQuery.of(context).devicePixelRatio;
-                if(!kIsWeb && Platform.isIOS) {
+                if(kIsWeb || Platform.isIOS) {
                   pixelRatio = 1;
                 }
                 final screenCoordinate = ScreenCoordinate(

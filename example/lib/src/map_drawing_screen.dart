@@ -1,5 +1,7 @@
 // Inside your main screen (where you use DrawingMapWidget)
 
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:google_maps_drawing_tools/google_maps_drawing_tools.dart';
 import 'package:pointer_interceptor/pointer_interceptor.dart'; // Your package
@@ -14,16 +16,16 @@ class MapDrawingScreen extends StatefulWidget {
 class _MapDrawingScreenState extends State<MapDrawingScreen> {
   final DrawingController _drawingController = DrawingController(
     onPolygonDrawn: (allPolygons) {
-      print("All polygons drawn: ${allPolygons.map((polygon) => polygon.id).join(", ")}");
+      debugPrint("All polygons drawn: ${allPolygons.map((polygon) => polygon.id).join(", ")}");
     },
     onPolygonSelected: (polygon) {
-      print("Selected polygon: ${polygon.id}");
+      debugPrint("Selected polygon: ${polygon.id}");
     },
     onPolygonUpdated: (polygon) {
-      print("Updated polygon: ${polygon.id}");
+      debugPrint("Updated polygon: ${polygon.id}");
     },
     onPolygonDeleted: (polygonId) {
-      print("Deleted polygon: $polygonId");
+      debugPrint("Deleted polygon: $polygonId");
     },
   );
 
@@ -38,7 +40,7 @@ class _MapDrawingScreenState extends State<MapDrawingScreen> {
     _drawingController.onPolygonDrawn = (allPolygons) {
       setState(() {
         // Handle the drawn polygons list
-        print("All drawn polygons: ${allPolygons.map((polygon) => polygon.id).join(", ")}");
+        debugPrint("All drawn polygons: ${allPolygons.map((polygon) => polygon.id).join(", ")}");
       });
     };
   }
@@ -57,7 +59,7 @@ class _MapDrawingScreenState extends State<MapDrawingScreen> {
             top: 20,
             left: 20,
             child: PointerInterceptor(
-              child: FloatingActionButton(onPressed: () => print(_drawingController.geoJsonFromDrawableShapes()), tooltip: 'Export as GeoJSON', child: Icon(Icons.exit_to_app)),
+              child: FloatingActionButton(onPressed: () => debugPrint(jsonEncode(_drawingController.geoJsonFromDrawableShapes())), tooltip: 'Export as GeoJSON', child: Icon(Icons.exit_to_app)),
             ),
           ),
           Positioned(

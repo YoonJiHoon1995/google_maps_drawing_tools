@@ -1,6 +1,6 @@
 // File: lib/google_maps_drawing_tools.dart
 
-library google_maps_drawing_tools;
+library;
 
 export 'src/drawing_controller.dart';
 export 'src/models/drawable_shape_bundle.dart';

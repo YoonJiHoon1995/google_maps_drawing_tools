@@ -10,8 +10,9 @@ Ideal for applications involving geofencing, region selection, and spatial data 
 
 - **Interactive Drawing**: Draw polygons, rectangles, and circles directly on the map with intuitive gestures.
 - **Editing Capabilities**: Modify shapes by dragging vertices or edges.
-- **Customizable Styles**: Adjust stroke and fill colors, opacity, and other styling options.
+- **Customizable Styles**: Adjust stroke and fill colors and other styling options.
 - **Selection & Deletion**: Tap to select shapes and remove them as needed.
+- **Import & Export**: Import and export shapes in GeoJSON format.
 - **Event Callbacks**: Hook into drawing and editing events for custom behaviors.
 - **Modular Architecture**: Clean codebase designed for easy integration and extension.
 
@@ -107,6 +108,8 @@ drawingController.deleteShape(shapeId);
 An example application demonstrating the package's capabilities is available in the `example/` directory.
 
 To run it:
+
+Add MAPS_API_KEY=Your_API_Key to local.properties inside the example/android directory.
 
 ```bash
 cd example
