@@ -335,8 +335,8 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
           widget.controller.updateCircleCenter(circle.id, newPosition);
         },
         infoWindow: InfoWindow(
-          title: "Circle Center",
-          snippet: "Drag to move circle",
+          title: "원 중심",
+          snippet: "드래그하여 위치를 이동하세요",
         ),
       ),
 
