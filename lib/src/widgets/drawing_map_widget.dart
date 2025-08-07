@@ -220,8 +220,8 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
             },
             infoWindow: InfoWindow(
               title: isFirst && isDrawing && hasEnoughPoints
-                  ? "Tap to Finish Drawing ✅"
-                  : "Long press and drag to update point",
+                  ? "탭하여 종료하세요."
+                  : "길게 눌러 드래그하세요.",
               onTap: () {
                 if (isFirst && isDrawing && hasEnoughPoints) {
                   widget.controller.finishPolygon();
@@ -279,7 +279,7 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
             },
             icon: widget.controller.midpointPolygonMarkerIcon,
             infoWindow:
-                InfoWindow(title: 'Long press and drag to add new point'),
+                InfoWindow(title: '길게 눌러 드래그하세요.'),
           ),
         );
       }
@@ -353,8 +353,8 @@ class _DrawingMapWidgetState extends State<DrawingMapWidget> {
           widget.controller.updateCircleRadius(circle.id, newPosition);
         },
         infoWindow: InfoWindow(
-          title: "Radius",
-          snippet: "${circle.radius.toStringAsFixed(2)} meters",
+          title: "지름",
+          snippet: "${circle.radius.toStringAsFixed(2)} m",
         ),
       ),
     };
